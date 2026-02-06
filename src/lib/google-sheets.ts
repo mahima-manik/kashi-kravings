@@ -43,6 +43,12 @@ function parseNumber(value: string | undefined | null): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
+const MONTH_ABBR: Record<string, string> = {
+  'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+  'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+  'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12',
+};
+
 function parseDate(dateValue: string | undefined | null): string {
   if (!dateValue) return '';
 
@@ -53,21 +59,32 @@ function parseDate(dateValue: string | undefined | null): string {
     return dateString;
   }
 
-  // Handle DD/MM/YYYY format
+  // Handle M/D/YYYY format (US format from Google Forms)
   const slashParts = dateString.split('/');
   if (slashParts.length === 3) {
-    const [day, month, year] = slashParts;
+    const [month, day, year] = slashParts;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
-  // Handle DD-MM-YYYY format
+  // Handle dash-separated formats
   const dashParts = dateString.split('-');
-  if (dashParts.length === 3 && dashParts[0].length <= 2) {
-    const [day, month, year] = dashParts;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  if (dashParts.length === 3) {
+    const [dayPart, monthPart, yearPart] = dashParts;
+
+    // DD-Mon-YY format (e.g., "31-Jan-26", "1-Feb-26")
+    const monthNum = MONTH_ABBR[monthPart];
+    if (monthNum) {
+      const fullYear = yearPart.length === 2 ? `20${yearPart}` : yearPart;
+      return `${fullYear}-${monthNum}-${dayPart.padStart(2, '0')}`;
+    }
+
+    // DD-MM-YYYY format
+    if (dayPart.length <= 2) {
+      return `${yearPart}-${monthPart.padStart(2, '0')}-${dayPart.padStart(2, '0')}`;
+    }
   }
 
-  // Try to parse as date
+  // Fallback: try native Date parsing
   const parsed = new Date(dateString);
   if (!isNaN(parsed.getTime())) {
     return parsed.toISOString().split('T')[0];

@@ -8,81 +8,81 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { StoreSummary } from '@/lib/types';
 
-interface StorePerformanceProps {
+interface SalesByLocationProps {
   data: StoreSummary[];
 }
 
 function formatCurrency(amount: number): string {
   if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(1)}L`;
+    return `₹${(amount / 100000).toFixed(0)}L`;
   }
   if (amount >= 1000) {
-    return `₹${(amount / 1000).toFixed(1)}K`;
+    return `₹${(amount / 1000).toFixed(0)}K`;
   }
   return `₹${amount}`;
 }
 
-function shortenStoreName(name: string): string {
-  if (name.length > 12) {
-    return name.substring(0, 10) + '...';
-  }
-  return name;
-}
-
-export default function StorePerformance({ data }: StorePerformanceProps) {
-  const chartData = data.map((store) => ({
-    ...store,
-    displayName: shortenStoreName(store.storeName),
-  }));
+export default function SalesByLocation({ data }: SalesByLocationProps) {
+  const chartData = data
+    .map((store) => ({
+      name: store.storeName,
+      sales: store.totalRevenue,
+    }))
+    .sort((a, b) => b.sales - a.sales);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Store Performance</h3>
+    <div className="bg-[#1a1a24] rounded-xl border border-[#2a2a3a] p-6">
+      <h3 className="text-base font-semibold text-white mb-6">Sales by Location</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#2a2a3a"
+              horizontal={false}
+            />
             <XAxis
               type="number"
               tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: '#9ca3af' }}
               tickLine={false}
-              axisLine={{ stroke: '#e0e0e0' }}
+              axisLine={{ stroke: '#2a2a3a' }}
             />
             <YAxis
               type="category"
-              dataKey="displayName"
-              tick={{ fontSize: 12 }}
+              dataKey="name"
+              tick={{ fontSize: 12, fill: '#9ca3af' }}
               tickLine={false}
-              axisLine={{ stroke: '#e0e0e0' }}
-              width={80}
+              axisLine={{ stroke: '#2a2a3a' }}
+              width={110}
             />
             <Tooltip
-              formatter={(value: number, name: string) => [
+              formatter={(value: number) => [
                 `₹${value.toLocaleString('en-IN')}`,
-                name === 'totalRevenue' ? 'Revenue' : 'Collection',
+                'Sales',
               ]}
               contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1a1a24',
+                border: '1px solid #2a2a3a',
                 borderRadius: '8px',
+                color: '#fff',
               }}
+              labelStyle={{ color: '#9ca3af' }}
+              cursor={{ fill: 'rgba(124, 92, 252, 0.1)' }}
             />
-            <Legend
-              formatter={(value) =>
-                value === 'totalRevenue' ? 'Revenue' : 'Collection'
-              }
+            <Bar
+              dataKey="sales"
+              fill="#7c5cfc"
+              radius={[0, 4, 4, 0]}
+              barSize={24}
             />
-            <Bar dataKey="totalRevenue" fill="#8e4838" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="totalCollection" fill="#16a34a" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

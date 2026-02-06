@@ -1,14 +1,13 @@
 'use client';
 
-import { IndianRupee, Package, Store, TrendingUp } from 'lucide-react';
+import { IndianRupee, Percent, AlertCircle } from 'lucide-react';
 
 interface SummaryCardsProps {
   totalRevenue: number;
   totalCollection: number;
   totalOutstanding: number;
-  totalUnits: number;
-  storesActiveToday: number;
   collectionRate: number;
+  transactionCount: number;
 }
 
 function formatCurrency(amount: number): string {
@@ -19,39 +18,28 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-function formatNumber(num: number): string {
-  return new Intl.NumberFormat('en-IN').format(num);
-}
-
 interface CardProps {
   title: string;
   value: string;
-  subtitle?: string;
+  subtitle: string;
+  subtitleColor?: string;
   icon: React.ReactNode;
-  trend?: 'up' | 'down' | 'neutral';
-  trendValue?: string;
-  color: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'orange';
+  iconBg: string;
+  borderColor?: string;
 }
 
-function Card({ title, value, subtitle, icon, color }: CardProps) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    purple: 'bg-purple-50 text-purple-600',
-    red: 'bg-red-50 text-red-600',
-    orange: 'bg-orange-50 text-orange-600',
-  };
-
+function Card({ title, value, subtitle, subtitleColor = 'text-gray-500', icon, iconBg, borderColor = 'border-[#2a2a3a]' }: CardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between">
+    <div className={`bg-[#1a1a24] rounded-xl border ${borderColor} p-5`}>
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          <p className="text-sm text-gray-400">{title}</p>
+          <p className="text-2xl font-bold text-white mt-2">{value}</p>
+          <p className={`text-sm mt-1 ${subtitleColor}`}>{subtitle}</p>
         </div>
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>{icon}</div>
+        <div className={`p-2 rounded-lg ${iconBg}`}>
+          {icon}
+        </div>
       </div>
     </div>
   );
@@ -61,48 +49,44 @@ export default function SummaryCards({
   totalRevenue,
   totalCollection,
   totalOutstanding,
-  totalUnits,
-  storesActiveToday,
   collectionRate,
+  transactionCount,
 }: SummaryCardsProps) {
+  const collectionSubtitle = collectionRate >= 50 ? 'Good collection' : 'Needs improvement';
+  const collectionSubColor = collectionRate >= 50 ? 'text-green-400' : 'text-orange-400';
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       <Card
-        title="Total Revenue"
+        title="Total Sales Value"
         value={formatCurrency(totalRevenue)}
-        icon={<IndianRupee className="h-6 w-6" />}
-        color="blue"
+        subtitle={`Across ${transactionCount} transactions`}
+        icon={<IndianRupee className="h-5 w-5 text-green-400" />}
+        iconBg="bg-green-900/40"
       />
       <Card
-        title="Collection Received"
+        title="Total Collection"
         value={formatCurrency(totalCollection)}
-        icon={<IndianRupee className="h-6 w-6" />}
-        color="green"
-      />
-      <Card
-        title="Outstanding"
-        value={formatCurrency(totalOutstanding)}
-        icon={<IndianRupee className="h-6 w-6" />}
-        color="red"
-      />
-      <Card
-        title="Total Units Sold"
-        value={formatNumber(totalUnits)}
-        icon={<Package className="h-6 w-6" />}
-        color="purple"
-      />
-      <Card
-        title="Stores Active Today"
-        value={storesActiveToday.toString()}
-        subtitle="out of 6 stores"
-        icon={<Store className="h-6 w-6" />}
-        color="orange"
+        subtitle="Amount received"
+        icon={<IndianRupee className="h-5 w-5 text-green-400" />}
+        iconBg="bg-green-900/40"
       />
       <Card
         title="Collection Rate"
         value={`${collectionRate.toFixed(1)}%`}
-        icon={<TrendingUp className="h-6 w-6" />}
-        color="yellow"
+        subtitle={collectionSubtitle}
+        subtitleColor={collectionSubColor}
+        icon={<Percent className="h-5 w-5 text-gray-300" />}
+        iconBg="bg-gray-700/40"
+      />
+      <Card
+        title="Outstanding Amount"
+        value={formatCurrency(totalOutstanding)}
+        subtitle="Pending collection"
+        subtitleColor="text-red-400"
+        icon={<AlertCircle className="h-5 w-5 text-red-400" />}
+        iconBg="bg-red-900/40"
+        borderColor="border-red-900/30"
       />
     </div>
   );

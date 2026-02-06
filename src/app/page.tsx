@@ -3,12 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import {
-  Header,
   SummaryCards,
-  SalesChart,
-  StorePerformance,
-  ProductBreakdown,
-  SalesTable,
+  SalesByLocation,
   DateRangePicker,
 } from '@/components/Dashboard';
 import { DashboardData, ApiResponse } from '@/lib/types';
@@ -18,8 +14,15 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [location, setLocation] = useState('all');
+
+  // Applied filter values (only update on Apply click)
+  const [appliedStartDate, setAppliedStartDate] = useState(startDate);
+  const [appliedEndDate, setAppliedEndDate] = useState(endDate);
+  const [appliedLocation, setAppliedLocation] = useState('all');
 
   const fetchData = useCallback(async (useMock = false) => {
     setIsLoading(true);
@@ -27,8 +30,8 @@ export default function DashboardPage() {
 
     try {
       const params = new URLSearchParams({
-        startDate,
-        endDate,
+        startDate: appliedStartDate,
+        endDate: appliedEndDate,
         ...(useMock && { mock: 'true' }),
       });
 
@@ -38,7 +41,6 @@ export default function DashboardPage() {
       if (result.success && result.data) {
         setData(result.data);
       } else {
-        // Fall back to mock data if real data fails
         const mockResponse = await fetch('/api/sales?mock=true');
         const mockResult: ApiResponse<DashboardData> = await mockResponse.json();
 
@@ -49,8 +51,7 @@ export default function DashboardPage() {
           setError(result.error || 'Failed to fetch data');
         }
       }
-    } catch (err) {
-      // Fall back to mock data on any error
+    } catch {
       try {
         const mockResponse = await fetch('/api/sales?mock=true');
         const mockResult: ApiResponse<DashboardData> = await mockResponse.json();
@@ -65,43 +66,62 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [appliedStartDate, appliedEndDate]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleRefresh = () => {
-    fetchData();
+  const handleApplyFilters = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+    setAppliedLocation(location);
   };
 
-  const handleDateChange = (newStartDate: string, newEndDate: string) => {
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
+  const handleReset = () => {
+    const defaultStart = format(subDays(new Date(), 29), 'yyyy-MM-dd');
+    const defaultEnd = format(new Date(), 'yyyy-MM-dd');
+    setStartDate(defaultStart);
+    setEndDate(defaultEnd);
+    setLocation('all');
+    setAppliedStartDate(defaultStart);
+    setAppliedEndDate(defaultEnd);
+    setAppliedLocation('all');
   };
+
+  // Filter store summaries by location
+  const filteredStoreSummaries = data?.storeSummaries.filter((store) => {
+    if (appliedLocation === 'all') return true;
+    return store.storeCode === appliedLocation;
+  }) ?? [];
+
+  // Compute filtered totals
+  const filteredRecords = data?.salesRecords.filter((record) => {
+    if (appliedLocation === 'all') return true;
+    return record.location === appliedLocation;
+  }) ?? [];
+
+  const totalRevenue = filteredRecords.reduce((sum, r) => sum + r.saleValue, 0);
+  const totalCollection = filteredRecords.reduce((sum, r) => sum + r.collectionReceived, 0);
+  const totalOutstanding = totalRevenue - totalCollection;
+  const collectionRate = totalRevenue > 0 ? (totalCollection / totalRevenue) * 100 : 0;
 
   if (isLoading && !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-chocolate-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto" />
+          <p className="mt-4 text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        lastUpdated={data?.lastUpdated || ''}
-        onRefresh={handleRefresh}
-        isLoading={isLoading}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[#0d0d12]">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+          <div className="mb-4 bg-amber-900/30 border border-amber-700/50 text-amber-300 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
@@ -110,33 +130,29 @@ export default function DashboardPage() {
           <DateRangePicker
             startDate={startDate}
             endDate={endDate}
-            onChange={handleDateChange}
+            location={location}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onLocationChange={setLocation}
+            onApply={handleApplyFilters}
+            onReset={handleReset}
           />
         </div>
 
         {data && (
           <>
-            <div className="mb-8">
+            <div className="mb-6">
               <SummaryCards
-                totalRevenue={data.totalRevenue}
-                totalCollection={data.totalCollection}
-                totalOutstanding={data.totalOutstanding}
-                totalUnits={data.totalUnits}
-                storesActiveToday={data.storesActiveToday}
-                collectionRate={data.collectionRate}
+                totalRevenue={totalRevenue}
+                totalCollection={totalCollection}
+                totalOutstanding={totalOutstanding}
+                collectionRate={collectionRate}
+                transactionCount={filteredRecords.length}
               />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <SalesChart data={data.dailySummaries} />
-              <StorePerformance data={data.storeSummaries} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <div className="lg:col-span-2">
-                <SalesTable data={data.salesRecords} />
-              </div>
-              <ProductBreakdown data={data.productSummaries} />
+            <div className="mb-6">
+              <SalesByLocation data={filteredStoreSummaries} />
             </div>
           </>
         )}

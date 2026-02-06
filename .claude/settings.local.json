@@ -5,7 +5,8 @@
       "Bash(pip3 install:*)",
       "Bash(python3:*)",
       "Bash(node:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "WebFetch(domain:docs.google.com)"
     ]
   }
 }
