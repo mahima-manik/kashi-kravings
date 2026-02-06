@@ -8,6 +8,7 @@ import {
   SummaryCards,
   SalesByLocation,
   DateRangePicker,
+  ProductUnitSales,
 } from '@/components/Dashboard';
 import { DashboardData, ApiResponse } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -168,6 +169,10 @@ export default function DashboardPage() {
 
             <div className="mb-6">
               <SalesByLocation data={filteredStoreSummaries} />
+            </div>
+
+            <div className="mb-6">
+              <ProductUnitSales records={filteredRecords} />
             </div>
           </>
         )}

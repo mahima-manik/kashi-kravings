@@ -5,3 +5,4 @@ export { default as DateRangePicker } from './DateRangePicker';
 export { default as SalesChart } from './SalesChart';
 export { default as SalesTable } from './SalesTable';
 export { default as ProductBreakdown } from './ProductBreakdown';
+export { default as ProductUnitSales } from './ProductUnitSales';
