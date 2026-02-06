@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { SalesRecord } from '@/lib/types';
+import { SalesRecord, STORE_MAP } from '@/lib/types';
 
 interface PromotionImpactProps {
   records: SalesRecord[];
@@ -61,11 +61,11 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
   // --- Scatter data ---
   const promoScatterData = records
     .filter((r) => r.promotionDuration > 0)
-    .map((r) => ({ x: r.promotionDuration, y: r.saleValue }));
+    .map((r) => ({ x: r.promotionDuration, y: r.saleValue, store: STORE_MAP[r.location] || r.location, date: r.date }));
 
   const sampleScatterData = records
     .filter((r) => r.sampleConsumed > 0)
-    .map((r) => ({ x: r.sampleConsumed, y: getTotalUnits(r) }));
+    .map((r) => ({ x: r.sampleConsumed, y: getTotalUnits(r), store: STORE_MAP[r.location] || r.location, date: r.date }));
 
   // --- TSO bucket data ---
   const tsoBuckets: Record<string, { totalSale: number; totalUnits: number; count: number }> = {
@@ -160,14 +160,18 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
                   tickFormatter={(v: number) => `₹${v.toLocaleString('en-IN')}`}
                 />
                 <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={labelStyle}
-                  itemStyle={{ color: '#fff' }}
-                  formatter={(value: number, name: string) => {
-                    if (name === 'Sale Value') return [`₹${value.toLocaleString('en-IN')}`, name];
-                    return [value, name];
-                  }}
                   cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div style={tooltipStyle} className="px-3 py-2 text-xs">
+                        <p className="text-white font-medium mb-1">{d.store}</p>
+                        <p className="text-gray-400">Date: <span className="text-white">{d.date}</span></p>
+                        <p className="text-gray-400">Sale Value: <span className="text-white">₹{d.y.toLocaleString('en-IN')}</span></p>
+                      </div>
+                    );
+                  }}
                 />
                 <Scatter data={promoScatterData} fill="#A69A5B" />
               </ScatterChart>
@@ -210,11 +214,19 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
                   allowDecimals={false}
                 />
                 <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={labelStyle}
-                  itemStyle={{ color: '#fff' }}
-                  formatter={(value: number, name: string) => [value.toLocaleString('en-IN'), name]}
                   cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div style={tooltipStyle} className="px-3 py-2 text-xs">
+                        <p className="text-white font-medium mb-1">{d.store}</p>
+                        <p className="text-gray-400">Date: <span className="text-white">{d.date}</span></p>
+                        <p className="text-gray-400">Samples: <span className="text-white">{d.x.toLocaleString('en-IN')}</span></p>
+                        <p className="text-gray-400">Units Sold: <span className="text-white">{d.y.toLocaleString('en-IN')}</span></p>
+                      </div>
+                    );
+                  }}
                 />
                 <Scatter data={sampleScatterData} fill="#16a34a" />
               </ScatterChart>
