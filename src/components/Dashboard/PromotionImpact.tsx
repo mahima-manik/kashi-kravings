@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronRight } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -126,7 +127,16 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Promotion Duration vs Sale Value */}
         <div>
-          <p className="text-sm text-gray-400 mb-3">Promotion Duration vs Sale Value</p>
+          <p className="text-sm text-gray-400 mb-1">Promotion Duration vs Sale Value</p>
+          <details className="mb-3 group">
+            <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
+              <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+              How is this calculated?
+            </summary>
+            <p className="text-xs text-gray-500 mt-1 pl-4">
+              Each dot represents a sale where a promotion was active. X-axis shows how long the promotion ran (in hours), Y-axis shows the sale value (in ₹).
+            </p>
+          </details>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -167,7 +177,16 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
 
         {/* Samples Consumed vs Units Sold */}
         <div>
-          <p className="text-sm text-gray-400 mb-3">Samples Consumed vs Units Sold</p>
+          <p className="text-sm text-gray-400 mb-1">Samples Consumed vs Units Sold</p>
+          <details className="mb-3 group">
+            <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
+              <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+              How is this calculated?
+            </summary>
+            <p className="text-xs text-gray-500 mt-1 pl-4">
+              Each dot represents a sale where samples were given. X-axis shows samples consumed, Y-axis shows total units sold in that transaction.
+            </p>
+          </details>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -206,7 +225,16 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
 
       {/* TSO Impact Bar Chart */}
       <div>
-        <p className="text-sm text-gray-400 mb-3">TSO Impact on Performance</p>
+        <p className="text-sm text-gray-400 mb-1">TSO Impact on Performance</p>
+        <details className="mb-3 group">
+          <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
+            <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+            How is this calculated?
+          </summary>
+          <p className="text-xs text-gray-500 mt-1 pl-4">
+            Records are grouped by TSO count (1, 2, or 3+). Each bar shows the average sale value and average units sold per transaction within that group.
+          </p>
+        </details>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={tsoBarData} margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>

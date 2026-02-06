@@ -15,6 +15,7 @@ import { DashboardData, ApiResponse } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState('sales');
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +133,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-primary">
-      <Header onRefresh={() => fetchData()} isLoading={isLoading} />
+      <Header onRefresh={() => fetchData()} isLoading={isLoading} activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
@@ -156,7 +157,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {data && (
+        {data && activeTab === 'sales' && (
           <>
             <div className="mb-6">
               <SummaryCards
@@ -175,11 +176,13 @@ export default function DashboardPage() {
             <div className="mb-6">
               <ProductUnitSales records={filteredRecords} />
             </div>
-
-            <div className="mb-6">
-              <PromotionImpact records={filteredRecords} />
-            </div>
           </>
+        )}
+
+        {data && activeTab === 'promotions' && (
+          <div className="mb-6">
+            <PromotionImpact records={filteredRecords} />
+          </div>
         )}
       </main>
     </div>

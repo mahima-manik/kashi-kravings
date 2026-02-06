@@ -2,12 +2,19 @@
 
 import { LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+const tabs = [
+  { id: 'sales', label: 'Sales' },
+  { id: 'promotions', label: 'Promotions' },
+];
+
 interface HeaderProps {
   onRefresh: () => void;
   isLoading: boolean;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export default function Header({ onRefresh, isLoading }: HeaderProps) {
+export default function Header({ onRefresh, isLoading, activeTab, onTabChange }: HeaderProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -28,8 +35,25 @@ export default function Header({ onRefresh, isLoading }: HeaderProps) {
             />
             <div>
               <h1 className="text-lg font-bold text-white">Kashi Kravings</h1>
-              <p className="text-xs text-gray-400">Sales Dashboard</p>
+              <p className="text-xs text-gray-400">
+                {activeTab === 'sales' ? 'Sales Dashboard' : 'Promotions Dashboard'}
+              </p>
             </div>
+            <nav className="flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === tab.id
+                      ? 'text-brand-gold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           </div>
 
           <div className="flex items-center gap-3">
