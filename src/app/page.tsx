@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
+import type { PresetKey } from '@/components/Dashboard/DateRangePicker';
 import {
   Header,
   SummaryCards,
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [location, setLocation] = useState('all');
+  const [activePreset, setActivePreset] = useState<PresetKey>('1m');
 
   const [appliedStartDate, setAppliedStartDate] = useState(startDate);
   const [appliedEndDate, setAppliedEndDate] = useState(endDate);
@@ -73,8 +75,18 @@ export default function DashboardPage() {
   }, [fetchData]);
 
   const handleApplyFilters = () => {
+    setActivePreset('custom');
     setAppliedStartDate(startDate);
     setAppliedEndDate(endDate);
+    setAppliedLocation(location);
+  };
+
+  const handleQuickSelect = (start: string, end: string, preset: PresetKey) => {
+    setStartDate(start);
+    setEndDate(end);
+    setActivePreset(preset);
+    setAppliedStartDate(start);
+    setAppliedEndDate(end);
     setAppliedLocation(location);
   };
 
@@ -84,6 +96,7 @@ export default function DashboardPage() {
     setStartDate(defaultStart);
     setEndDate(defaultEnd);
     setLocation('all');
+    setActivePreset('1m');
     setAppliedStartDate(defaultStart);
     setAppliedEndDate(defaultEnd);
     setAppliedLocation('all');
@@ -131,11 +144,13 @@ export default function DashboardPage() {
             startDate={startDate}
             endDate={endDate}
             location={location}
+            activePreset={activePreset}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
-            onLocationChange={setLocation}
+            onLocationChange={(loc) => { setLocation(loc); setAppliedLocation(loc); }}
             onApply={handleApplyFilters}
             onReset={handleReset}
+            onQuickSelect={handleQuickSelect}
           />
         </div>
 
