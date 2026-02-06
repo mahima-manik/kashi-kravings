@@ -127,7 +127,7 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Promotion Duration vs Sale Value */}
         <div>
-          <p className="text-sm text-gray-400 mb-1">Promotion Duration vs Sale Value</p>
+          <p className="text-base font-semibold text-white mb-1">Promotion Duration vs Sale Value</p>
           <details className="mb-3 group">
             <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
               <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
@@ -181,7 +181,7 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
 
         {/* Samples Consumed vs Units Sold */}
         <div>
-          <p className="text-sm text-gray-400 mb-1">Samples Consumed vs Units Sold</p>
+          <p className="text-base font-semibold text-white mb-1">Samples Consumed vs Units Sold</p>
           <details className="mb-3 group">
             <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
               <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
@@ -237,7 +237,7 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
 
       {/* TSO Impact Bar Chart */}
       <div>
-        <p className="text-sm text-gray-400 mb-1">TSO Impact on Performance</p>
+        <p className="text-base font-semibold text-white mb-1">TSO Impact on Performance</p>
         <details className="mb-3 group">
           <summary className="text-xs text-gray-500 cursor-pointer inline-flex items-center gap-1 hover:text-gray-400 transition-colors">
             <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
