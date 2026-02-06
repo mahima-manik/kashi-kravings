@@ -2,8 +2,6 @@
 
 import { LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-
 interface HeaderProps {
   onRefresh: () => void;
   isLoading: boolean;
@@ -23,15 +21,11 @@ export default function Header({ onRefresh, isLoading }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-hidden">
-              <Image
-                src="/logo.jpeg"
-                alt="Kashi Kravings"
-                width={40}
-                height={40}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <img
+              src="/logo.jpeg"
+              alt="Kashi Kravings"
+              className="w-10 h-10 rounded-lg object-cover"
+            />
             <div>
               <h1 className="text-lg font-bold text-white">Kashi Kravings</h1>
               <p className="text-xs text-gray-400">Sales Dashboard</p>

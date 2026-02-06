@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,16 +45,11 @@ export default function LoginPage() {
         <div className="bg-surface-card rounded-2xl border border-surface-border p-8">
           {/* Brand Logo */}
           <div className="text-center mb-8">
-            <div className="w-28 h-28 mx-auto mb-4 rounded-2xl overflow-hidden">
-              <Image
-                src="/logo.jpeg"
-                alt="Kashi Kravings"
-                width={112}
-                height={112}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
+            <img
+              src="/logo.jpeg"
+              alt="Kashi Kravings"
+              className="w-28 h-28 mx-auto mb-4 rounded-2xl object-cover"
+            />
             <p className="text-gray-400 text-sm">Sales Dashboard</p>
           </div>
 
@@ -86,15 +81,24 @@ export default function LoginPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
-                placeholder="Enter password"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-12 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
+                  placeholder="Enter password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             <button
