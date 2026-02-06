@@ -11,50 +11,36 @@ import {
   Legend,
 } from 'recharts';
 import { DailySummary } from '@/lib/types';
+import { formatCurrencyCompact, formatDateShort } from '@/lib/format';
 
 interface SalesChartProps {
   data: DailySummary[];
 }
 
-function formatCurrency(amount: number): string {
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(1)}L`;
-  }
-  if (amount >= 1000) {
-    return `₹${(amount / 1000).toFixed(1)}K`;
-  }
-  return `₹${amount}`;
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-}
-
 export default function SalesChart({ data }: SalesChartProps) {
   const chartData = data.slice(-14).map((item) => ({
     ...item,
-    displayDate: formatDate(item.date),
+    displayDate: formatDateShort(item.date),
   }));
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales Trend (Last 14 Days)</h3>
+    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+      <h3 className="text-base font-semibold text-white mb-4">Sales Trend (Last 14 Days)</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
             <XAxis
               dataKey="displayDate"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 12, fill: '#9ca3af' }}
               tickLine={false}
-              axisLine={{ stroke: '#e0e0e0' }}
+              axisLine={{ stroke: '#2a2a3a' }}
             />
             <YAxis
-              tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
+              tickFormatter={formatCurrencyCompact}
+              tick={{ fontSize: 12, fill: '#9ca3af' }}
               tickLine={false}
-              axisLine={{ stroke: '#e0e0e0' }}
+              axisLine={{ stroke: '#2a2a3a' }}
             />
             <Tooltip
               formatter={(value: number, name: string) => [
@@ -63,22 +49,25 @@ export default function SalesChart({ data }: SalesChartProps) {
               ]}
               labelFormatter={(label) => `Date: ${label}`}
               contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1a1a24',
+                border: '1px solid #2a2a3a',
                 borderRadius: '8px',
+                color: '#fff',
               }}
+              labelStyle={{ color: '#9ca3af' }}
             />
             <Legend
               formatter={(value) =>
                 value === 'totalRevenue' ? 'Revenue' : 'Collection'
               }
+              wrapperStyle={{ color: '#9ca3af' }}
             />
             <Line
               type="monotone"
               dataKey="totalRevenue"
-              stroke="#8e4838"
+              stroke="#A69A5B"
               strokeWidth={2}
-              dot={{ fill: '#8e4838', strokeWidth: 2 }}
+              dot={{ fill: '#A69A5B', strokeWidth: 2 }}
               activeDot={{ r: 6 }}
             />
             <Line

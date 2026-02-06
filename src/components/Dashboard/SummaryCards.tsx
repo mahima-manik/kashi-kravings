@@ -1,6 +1,7 @@
 'use client';
 
 import { IndianRupee, Percent, AlertCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/format';
 
 interface SummaryCardsProps {
   totalRevenue: number;
@@ -8,14 +9,6 @@ interface SummaryCardsProps {
   totalOutstanding: number;
   collectionRate: number;
   transactionCount: number;
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
 }
 
 interface CardProps {
@@ -28,18 +21,24 @@ interface CardProps {
   borderColor?: string;
 }
 
-function Card({ title, value, subtitle, subtitleColor = 'text-gray-500', icon, iconBg, borderColor = 'border-[#2a2a3a]' }: CardProps) {
+function Card({
+  title,
+  value,
+  subtitle,
+  subtitleColor = 'text-gray-500',
+  icon,
+  iconBg,
+  borderColor = 'border-surface-border',
+}: CardProps) {
   return (
-    <div className={`bg-[#1a1a24] rounded-xl border ${borderColor} p-5`}>
+    <div className={`bg-surface-card rounded-xl border ${borderColor} p-5`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-400">{title}</p>
           <p className="text-2xl font-bold text-white mt-2">{value}</p>
           <p className={`text-sm mt-1 ${subtitleColor}`}>{subtitle}</p>
         </div>
-        <div className={`p-2 rounded-lg ${iconBg}`}>
-          {icon}
-        </div>
+        <div className={`p-2 rounded-lg ${iconBg}`}>{icon}</div>
       </div>
     </div>
   );

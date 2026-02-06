@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { SalesRecord } from '@/lib/types';
+import { formatCurrency, formatDate } from '@/lib/format';
 
 interface SalesTableProps {
   data: SalesRecord[];
@@ -11,22 +12,16 @@ interface SalesTableProps {
 type SortField = 'date' | 'storeName' | 'saleValue' | 'collectionReceived';
 type SortDirection = 'asc' | 'desc';
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+const PRODUCT_BADGES: { key: keyof SalesRecord; label: string; color: string }[] = [
+  { key: 'paanL', label: 'Paan L', color: 'bg-green-900/40 text-green-300' },
+  { key: 'thandaiL', label: 'Thandai L', color: 'bg-purple-900/40 text-purple-300' },
+  { key: 'giloriL', label: 'Gilori L', color: 'bg-pink-900/40 text-pink-300' },
+  { key: 'paanS', label: 'Paan S', color: 'bg-green-900/30 text-green-400' },
+  { key: 'thandaiS', label: 'Thandai S', color: 'bg-purple-900/30 text-purple-400' },
+  { key: 'giloriS', label: 'Gilori S', color: 'bg-pink-900/30 text-pink-400' },
+  { key: 'heritageBox9', label: 'Gift (9)', color: 'bg-amber-900/40 text-amber-300' },
+  { key: 'heritageBox15', label: 'Gift (15)', color: 'bg-amber-900/30 text-amber-400' },
+];
 
 export default function SalesTable({ data }: SalesTableProps) {
   const [sortField, setSortField] = useState<SortField>('date');
@@ -93,12 +88,13 @@ export default function SalesTable({ data }: SalesTableProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
+    <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-surface-border">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900">Sales Records</h3>
+          <h3 className="text-base font-semibold text-white">Sales Records</h3>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input
               type="text"
               placeholder="Search by store or date..."
@@ -107,136 +103,75 @@ export default function SalesTable({ data }: SalesTableProps) {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-chocolate-500 focus:border-transparent"
+              className="pl-10 pr-4 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-white placeholder-gray-500 text-sm focus:ring-1 focus:ring-brand-gold focus:border-transparent outline-none"
             />
           </div>
         </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-surface-border">
+          <thead className="bg-surface-card-hover">
             <tr>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('date')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Date</span>
-                  <SortIcon field="date" />
-                </div>
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('storeName')}
-              >
-                <div className="flex items-center space-x-1">
-                  <span>Store</span>
-                  <SortIcon field="storeName" />
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Products
-              </th>
-              <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('saleValue')}
-              >
-                <div className="flex items-center justify-end space-x-1">
-                  <span>Sale Value</span>
-                  <SortIcon field="saleValue" />
-                </div>
-              </th>
-              <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('collectionReceived')}
-              >
-                <div className="flex items-center justify-end space-x-1">
-                  <span>Collection</span>
-                  <SortIcon field="collectionReceived" />
-                </div>
-              </th>
+              {[
+                { field: 'date' as SortField, label: 'Date', align: 'text-left' },
+                { field: 'storeName' as SortField, label: 'Store', align: 'text-left' },
+                { field: null, label: 'Products', align: 'text-left' },
+                { field: 'saleValue' as SortField, label: 'Sale Value', align: 'text-right' },
+                { field: 'collectionReceived' as SortField, label: 'Collection', align: 'text-right' },
+              ].map(({ field, label, align }) => (
+                <th
+                  key={label}
+                  className={`px-6 py-3 ${align} text-xs font-medium text-gray-400 uppercase tracking-wider ${field ? 'cursor-pointer hover:text-gray-200' : ''}`}
+                  onClick={field ? () => handleSort(field) : undefined}
+                >
+                  <div className={`flex items-center ${align === 'text-right' ? 'justify-end' : ''} gap-1`}>
+                    <span>{label}</span>
+                    {field && <SortIcon field={field} />}
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-surface-border">
             {paginatedData.map((record) => {
-              const totalUnits =
-                record.paanL +
-                record.thandaiL +
-                record.giloriL +
-                record.paanS +
-                record.thandaiS +
-                record.giloriS +
-                record.heritageBox9 +
-                record.heritageBox15;
+              const hasProducts = PRODUCT_BADGES.some(
+                ({ key }) => (record[key] as number) > 0
+              );
 
               return (
-                <tr key={record.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={record.id} className="hover:bg-surface-card-hover transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                     {formatDate(record.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {record.storeName}
-                    </div>
+                    <div className="text-sm font-medium text-white">{record.storeName}</div>
                     <div className="text-xs text-gray-500">{record.location}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm">
                     <div className="flex flex-wrap gap-1">
-                      {record.paanL > 0 && (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs">
-                          Paan L: {record.paanL}
-                        </span>
+                      {PRODUCT_BADGES.map(({ key, label, color }) =>
+                        (record[key] as number) > 0 ? (
+                          <span key={key} className={`px-2 py-0.5 rounded text-xs ${color}`}>
+                            {label}: {record[key] as number}
+                          </span>
+                        ) : null
                       )}
-                      {record.thandaiL > 0 && (
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs">
-                          Thandai L: {record.thandaiL}
-                        </span>
-                      )}
-                      {record.giloriL > 0 && (
-                        <span className="px-2 py-0.5 bg-pink-100 text-pink-800 rounded text-xs">
-                          Gilori L: {record.giloriL}
-                        </span>
-                      )}
-                      {record.paanS > 0 && (
-                        <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs">
-                          Paan S: {record.paanS}
-                        </span>
-                      )}
-                      {record.thandaiS > 0 && (
-                        <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">
-                          Thandai S: {record.thandaiS}
-                        </span>
-                      )}
-                      {record.giloriS > 0 && (
-                        <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-xs">
-                          Gilori S: {record.giloriS}
-                        </span>
-                      )}
-                      {record.heritageBox9 > 0 && (
-                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs">
-                          Gift (9): {record.heritageBox9}
-                        </span>
-                      )}
-                      {record.heritageBox15 > 0 && (
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs">
-                          Gift (15): {record.heritageBox15}
-                        </span>
-                      )}
-                      {totalUnits === 0 && (
-                        <span className="text-gray-400 italic">No products</span>
+                      {!hasProducts && (
+                        <span className="text-gray-600 italic">No products</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-white">
                     {formatCurrency(record.saleValue)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                     <span
                       className={
                         record.collectionReceived >= record.saleValue
-                          ? 'text-green-600 font-medium'
-                          : 'text-amber-600'
+                          ? 'text-green-400 font-medium'
+                          : 'text-amber-400'
                       }
                     >
                       {formatCurrency(record.collectionReceived)}
@@ -249,25 +184,26 @@ export default function SalesTable({ data }: SalesTableProps) {
         </table>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-surface-border flex items-center justify-between">
           <div className="text-sm text-gray-500">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
             {Math.min(currentPage * itemsPerPage, filteredAndSortedData.length)} of{' '}
             {filteredAndSortedData.length} records
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 bg-surface-card-hover border border-surface-border-light rounded text-sm text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3 py-1 bg-surface-card-hover border border-surface-border-light rounded text-sm text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

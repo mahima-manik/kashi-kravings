@@ -8,18 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#fdf4f3',
-          100: '#fce7e4',
-          200: '#fad3cd',
-          300: '#f5b3aa',
-          400: '#ed8678',
-          500: '#e15f4e',
-          600: '#cd4331',
-          700: '#ac3526',
-          800: '#8e2f23',
-          900: '#762c23',
-          950: '#40130e',
+        brand: {
+          olive: '#8B7D3C',
+          gold: '#A69A5B',
+          cream: '#F5E6C8',
+          ivory: '#FAF3E6',
+        },
+        surface: {
+          primary: '#0d0d12',
+          card: '#1a1a24',
+          'card-hover': '#22222e',
+          border: '#2a2a3a',
+          'border-light': '#3a3a4a',
         },
         chocolate: {
           50: '#faf5f2',
@@ -38,4 +38,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};

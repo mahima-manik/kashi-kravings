@@ -2,19 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-primary: #0d0d12;
-  --bg-card: #1a1a24;
-  --bg-card-hover: #22222e;
-  --border-color: #2a2a3a;
-  --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --accent-purple: #7c5cfc;
-}
-
 body {
-  color: var(--text-primary);
-  background: var(--bg-primary);
+  color: #ffffff;
+  background: #0d0d12;
 }
 
 /* Custom scrollbar */
@@ -37,11 +27,8 @@ body {
   background: #4a4a5a;
 }
 
-/* Dark date input styling */
-input[type="date"] {
-  color-scheme: dark;
-}
-
+/* Dark date input and select styling */
+input[type='date'],
 select {
   color-scheme: dark;
 }

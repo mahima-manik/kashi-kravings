@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -39,26 +40,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-chocolate-50 to-primary-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-surface-card rounded-2xl border border-surface-border p-8">
+          {/* Brand Logo */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-chocolate-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">KK</span>
+            <div className="w-28 h-28 mx-auto mb-4 rounded-2xl overflow-hidden">
+              <Image
+                src="/logo.jpeg"
+                alt="Kashi Kravings"
+                width={112}
+                height={112}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Kashi Kravings</h1>
-            <p className="text-gray-500 mt-2">Sales Dashboard</p>
+            <p className="text-gray-400 text-sm">Sales Dashboard</p>
           </div>
 
+          {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+            <div className="bg-red-900/30 border border-red-700/50 text-red-300 px-4 py-3 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -67,22 +77,22 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-chocolate-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
                 placeholder="admin@kashikravings.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
               <input
                 id="password"
-                type="password"
+                type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-chocolate-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
                 placeholder="Enter password"
               />
             </div>
@@ -90,7 +100,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-chocolate-600 hover:bg-chocolate-700 text-white font-medium py-3 px-4 rounded-lg disabled:opacity-50 flex items-center justify-center"
+              className="w-full bg-brand-olive hover:bg-brand-gold text-white font-medium py-3 px-4 rounded-lg disabled:opacity-50 flex items-center justify-center transition-colors"
             >
               {isLoading ? (
                 <>

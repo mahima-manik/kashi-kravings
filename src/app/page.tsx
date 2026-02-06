@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import {
+  Header,
   SummaryCards,
   SalesByLocation,
   DateRangePicker,
@@ -19,7 +20,6 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [location, setLocation] = useState('all');
 
-  // Applied filter values (only update on Apply click)
   const [appliedStartDate, setAppliedStartDate] = useState(startDate);
   const [appliedEndDate, setAppliedEndDate] = useState(endDate);
   const [appliedLocation, setAppliedLocation] = useState('all');
@@ -89,13 +89,11 @@ export default function DashboardPage() {
     setAppliedLocation('all');
   };
 
-  // Filter store summaries by location
   const filteredStoreSummaries = data?.storeSummaries.filter((store) => {
     if (appliedLocation === 'all') return true;
     return store.storeCode === appliedLocation;
   }) ?? [];
 
-  // Compute filtered totals
   const filteredRecords = data?.salesRecords.filter((record) => {
     if (appliedLocation === 'all') return true;
     return record.location === appliedLocation;
@@ -108,9 +106,9 @@ export default function DashboardPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="min-h-screen bg-[#0d0d12] flex items-center justify-center">
+      <div className="min-h-screen bg-surface-primary flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-brand-gold mx-auto" />
           <p className="mt-4 text-gray-400">Loading dashboard...</p>
         </div>
       </div>
@@ -118,7 +116,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d12]">
+    <div className="min-h-screen bg-surface-primary">
+      <Header onRefresh={() => fetchData()} isLoading={isLoading} />
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
           <div className="mb-4 bg-amber-900/30 border border-amber-700/50 text-amber-300 px-4 py-3 rounded-lg text-sm">

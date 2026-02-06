@@ -8,14 +8,14 @@ interface ProductBreakdownProps {
 }
 
 const COLORS = [
-  '#8e4838', // chocolate-700
-  '#b86d4f', // chocolate-500
+  '#A69A5B', // brand gold
+  '#8B7D3C', // brand olive
   '#d6ae97', // chocolate-300
-  '#e15f4e', // primary-500
-  '#f5b3aa', // primary-300
-  '#cd4331', // primary-600
-  '#fad3cd', // primary-200
-  '#ac3526', // primary-700
+  '#b86d4f', // chocolate-500
+  '#8e4838', // chocolate-700
+  '#F5E6C8', // brand cream
+  '#c4886c', // chocolate-400
+  '#5f332b', // chocolate-900
 ];
 
 export default function ProductBreakdown({ data }: ProductBreakdownProps) {
@@ -27,8 +27,8 @@ export default function ProductBreakdown({ data }: ProductBreakdownProps) {
   const totalUnits = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Mix</h3>
+    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+      <h3 className="text-base font-semibold text-white mb-4">Product Mix</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -40,7 +40,7 @@ export default function ProductBreakdown({ data }: ProductBreakdownProps) {
               outerRadius={100}
               paddingAngle={2}
               dataKey="value"
-              label={({ name, percent }) =>
+              label={({ percent }) =>
                 percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
               }
               labelLine={false}
@@ -55,10 +55,12 @@ export default function ProductBreakdown({ data }: ProductBreakdownProps) {
                 name,
               ]}
               contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e0',
+                backgroundColor: '#1a1a24',
+                border: '1px solid #2a2a3a',
                 borderRadius: '8px',
+                color: '#fff',
               }}
+              labelStyle={{ color: '#9ca3af' }}
             />
             <Legend
               layout="vertical"
@@ -66,7 +68,7 @@ export default function ProductBreakdown({ data }: ProductBreakdownProps) {
               verticalAlign="middle"
               iconType="circle"
               formatter={(value) => (
-                <span className="text-sm text-gray-700">{value}</span>
+                <span className="text-sm text-gray-400">{value}</span>
               )}
             />
           </PieChart>

@@ -10,19 +10,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { StoreSummary } from '@/lib/types';
+import { formatCurrencyCompact } from '@/lib/format';
 
 interface SalesByLocationProps {
   data: StoreSummary[];
-}
-
-function formatCurrency(amount: number): string {
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(0)}L`;
-  }
-  if (amount >= 1000) {
-    return `₹${(amount / 1000).toFixed(0)}K`;
-  }
-  return `₹${amount}`;
 }
 
 export default function SalesByLocation({ data }: SalesByLocationProps) {
@@ -34,7 +25,7 @@ export default function SalesByLocation({ data }: SalesByLocationProps) {
     .sort((a, b) => b.sales - a.sales);
 
   return (
-    <div className="bg-[#1a1a24] rounded-xl border border-[#2a2a3a] p-6">
+    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
       <h3 className="text-base font-semibold text-white mb-6">Sales by Location</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -43,14 +34,10 @@ export default function SalesByLocation({ data }: SalesByLocationProps) {
             layout="vertical"
             margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
           >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#2a2a3a"
-              horizontal={false}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={formatCurrency}
+              tickFormatter={formatCurrencyCompact}
               tick={{ fontSize: 12, fill: '#9ca3af' }}
               tickLine={false}
               axisLine={{ stroke: '#2a2a3a' }}
@@ -75,14 +62,9 @@ export default function SalesByLocation({ data }: SalesByLocationProps) {
                 color: '#fff',
               }}
               labelStyle={{ color: '#9ca3af' }}
-              cursor={{ fill: 'rgba(124, 92, 252, 0.1)' }}
+              cursor={{ fill: 'rgba(139, 125, 60, 0.1)' }}
             />
-            <Bar
-              dataKey="sales"
-              fill="#7c5cfc"
-              radius={[0, 4, 4, 0]}
-              barSize={24}
-            />
+            <Bar dataKey="sales" fill="#A69A5B" radius={[0, 4, 4, 0]} barSize={24} />
           </BarChart>
         </ResponsiveContainer>
       </div>
