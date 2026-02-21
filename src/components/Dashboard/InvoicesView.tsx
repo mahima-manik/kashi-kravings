@@ -160,49 +160,49 @@ export default function InvoicesView() {
 
       {/* Invoice Table */}
       <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
-        <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <FileText className="h-5 w-5 text-brand-gold" />
-            All Invoices
-          </h2>
-          <div className="flex items-center gap-3">
-            {data && data.invoices.length > 0 && (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  <input
-                    type="text"
-                    placeholder="Search by name..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-3 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-brand-gold/50 w-64"
-                  />
-                </div>
-                <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
-                  {(['all', 'paid', 'unpaid'] as const).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setStatusFilter(status)}
-                      className={`px-3 py-2 capitalize transition-colors ${
-                        statusFilter === status
-                          ? 'bg-brand-gold/20 text-brand-gold font-medium'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+        <div className="px-4 sm:px-6 py-4 border-b border-surface-border space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <FileText className="h-5 w-5 text-brand-gold" />
+              All Invoices
+            </h2>
             <button
               onClick={() => setShowUpload(true)}
               className="inline-flex items-center gap-2 px-3 py-2 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm font-medium rounded-lg hover:bg-brand-gold/20 transition-colors"
             >
               <Upload className="h-4 w-4" />
-              Upload CSV
+              <span className="hidden sm:inline">Upload CSV</span>
             </button>
           </div>
+          {data && data.invoices.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative flex-1 sm:flex-none">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full sm:w-64 pl-9 pr-3 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-brand-gold/50"
+                />
+              </div>
+              <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
+                {(['all', 'paid', 'unpaid'] as const).map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={`flex-1 sm:flex-none px-3 py-2 capitalize transition-colors ${
+                      statusFilter === status
+                        ? 'bg-brand-gold/20 text-brand-gold font-medium'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -216,23 +216,29 @@ export default function InvoicesView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-surface-card-hover text-gray-500 dark:text-gray-400 text-left text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">Invoice #</th>
+                  <th className="hidden sm:table-cell px-4 py-3">Invoice #</th>
                   <SortableHeader field="date" label="Date" currentField={sortField} direction={sortDir} onSort={handleSort} />
                   <th className="px-4 py-3">Contact</th>
                   <SortableHeader field="amount" label="Amount" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
-                  <SortableHeader field="remaining" label="Remaining" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
+                  <SortableHeader className="hidden md:table-cell" field="remaining" label="Remaining" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Link</th>
+                  <th className="hidden lg:table-cell px-4 py-3">Link</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {filteredInvoices.map((inv) => (
                   <tr key={inv.invoiceNo} className="hover:bg-surface-card-hover transition-colors">
-                    <td className="px-4 py-3 text-gray-900 dark:text-white font-medium">{inv.invoiceNo}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-gray-900 dark:text-white font-medium">{inv.invoiceNo}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.invoiceDate}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.contactName}</td>
-                    <td className="px-4 py-3 text-gray-900 dark:text-white text-right">{formatCurrency(inv.amount)}</td>
-                    <td className="px-4 py-3 text-gray-900 dark:text-white text-right">{formatCurrency(inv.remainingAmount)}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-gray-600 dark:text-gray-300">{inv.contactName}</span>
+                      <span className="sm:hidden block text-xs text-gray-400 dark:text-gray-500">#{inv.invoiceNo}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-gray-900 dark:text-white font-medium">{formatCurrency(inv.amount)}</span>
+                      <span className="md:hidden block text-xs text-gray-500 dark:text-gray-400">Rem: {formatCurrency(inv.remainingAmount)}</span>
+                    </td>
+                    <td className="hidden md:table-cell px-4 py-3 text-gray-900 dark:text-white text-right">{formatCurrency(inv.remainingAmount)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         inv.invoiceStatus === 'Paid'
@@ -242,7 +248,7 @@ export default function InvoicesView() {
                         {inv.invoiceStatus}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden lg:table-cell px-4 py-3">
                       {inv.invoiceLink && (
                         <a
                           href={inv.invoiceLink}
@@ -273,19 +279,20 @@ export default function InvoicesView() {
 }
 
 function SortableHeader({
-  field, label, currentField, direction, onSort, align,
+  field, label, currentField, direction, onSort, align, className,
 }: {
   field: 'date' | 'amount' | 'remaining';
   label: string;
-  currentField: 'date' | 'amount' | 'remaining' | 'remaining' | null;
+  currentField: 'date' | 'amount' | 'remaining' | null;
   direction: 'asc' | 'desc';
   onSort: (field: 'date' | 'amount' | 'remaining') => void;
   align?: 'right';
+  className?: string;
 }) {
   const active = currentField === field;
   return (
     <th
-      className={`px-4 py-3 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200 transition-colors ${align === 'right' ? 'text-right' : ''}`}
+      className={`px-4 py-3 cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200 transition-colors ${align === 'right' ? 'text-right' : ''} ${className || ''}`}
       onClick={() => onSort(field)}
     >
       <span className="inline-flex items-center gap-1">

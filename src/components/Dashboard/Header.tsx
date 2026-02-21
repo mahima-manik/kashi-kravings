@@ -38,15 +38,10 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             <img
               src="/logo.jpeg"
               alt="Kashi Kravings"
-              className="w-10 h-10 rounded-lg object-cover"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
             />
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {activeTab === 'sales' ? 'Sales & Promotions Dashboard' : 'Invoice Management'}
-              </p>
-            </div>
-            <nav className="flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
+            <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
+            <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -63,7 +58,7 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {mounted && (
               <button
                 onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
@@ -76,20 +71,37 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             <button
               onClick={onRefresh}
               disabled={isLoading}
-              className="inline-flex items-center px-3 py-2 bg-surface-card-hover border border-surface-border-light text-sm font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
+              className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-surface-card-hover border border-surface-border-light text-sm font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline ml-2">Refresh</span>
             </button>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center px-3 py-2 bg-chocolate-700 hover:bg-chocolate-600 text-sm font-medium rounded-lg text-white transition-colors"
+              className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-chocolate-700 hover:bg-chocolate-600 text-sm font-medium rounded-lg text-white transition-colors"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Logout</span>
             </button>
           </div>
         </div>
+
+        {/* Mobile tabs */}
+        <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                activeTab === tab.id
+                  ? 'text-brand-gold bg-brand-gold/10'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
     </header>
   );
