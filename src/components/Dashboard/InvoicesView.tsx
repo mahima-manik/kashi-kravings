@@ -194,11 +194,7 @@ export default function InvoicesView() {
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.invoiceDate}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.contactName}</td>
                     <td className="px-4 py-3 text-gray-900 dark:text-white text-right">{formatCurrency(inv.amount)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={inv.remainingAmount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-gray-500'}>
-                        {formatCurrency(inv.remainingAmount)}
-                      </span>
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 dark:text-white text-right">{formatCurrency(inv.remainingAmount)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         inv.invoiceStatus === 'Paid'

@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 
 const tabs = [
   { id: 'sales', label: 'Sales' },
-  { id: 'promotions', label: 'Promotions' },
   { id: 'invoices', label: 'Invoices' },
 ];
 
@@ -44,7 +43,7 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             <div>
               <h1 className="text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {activeTab === 'sales' ? 'Sales Dashboard' : activeTab === 'promotions' ? 'Promotions Dashboard' : 'Invoice Management'}
+                {activeTab === 'sales' ? 'Sales & Promotions Dashboard' : 'Invoice Management'}
               </p>
             </div>
             <nav className="flex items-center gap-1 ml-4 border-l border-surface-border pl-4">

@@ -116,6 +116,10 @@ export default function SalesTable({ data }: SalesTableProps) {
                 { field: 'storeName' as SortField, label: 'Store', align: 'text-left' },
                 { field: null, label: 'Products', align: 'text-left' },
                 { field: 'saleValue' as SortField, label: 'Sale Value', align: 'text-right' },
+                { field: null, label: 'TSOs', align: 'text-center' },
+                { field: null, label: 'Samples Given', align: 'text-center' },
+                { field: null, label: 'Samples Used', align: 'text-center' },
+                { field: null, label: 'Promo Hrs', align: 'text-center' },
               ].map(({ field, label, align }) => (
                 <th
                   key={label}
@@ -161,6 +165,18 @@ export default function SalesTable({ data }: SalesTableProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-white">
                     {formatCurrency(record.saleValue)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">
+                    {record.numTSO > 0 ? record.numTSO : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">
+                    {record.sampleGiven > 0 ? record.sampleGiven : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">
+                    {record.sampleConsumed > 0 ? record.sampleConsumed : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-300">
+                    {record.promotionDuration > 0 ? `${record.promotionDuration}h` : '-'}
                   </td>
                 </tr>
               );

@@ -10,10 +10,43 @@ import {
   DateRangePicker,
   ProductUnitSales,
   PromotionImpact,
+  SalesPromotionTrend,
   InvoicesView,
 } from '@/components/Dashboard';
-import { DashboardData, ApiResponse } from '@/lib/types';
+import { DashboardData, DailySummary, SalesRecord, ApiResponse } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+
+function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummary[] {
+  const map = new Map<string, DailySummary>();
+  for (const r of records) {
+    if (!r.date) continue;
+    const existing = map.get(r.date);
+    const units = r.paanL + r.thandaiL + r.giloriL + r.paanS + r.thandaiS + r.giloriS + r.heritageBox9 + r.heritageBox15;
+    if (existing) {
+      existing.totalRevenue += r.saleValue;
+      existing.totalCollection += r.collectionReceived;
+      existing.totalUnits += units;
+      existing.storeCount += 1;
+      existing.totalTSOs += r.numTSO;
+      existing.totalSampleGiven += r.sampleGiven;
+      existing.totalSampleConsumed += r.sampleConsumed;
+      existing.totalPromotionHours += r.promotionDuration;
+    } else {
+      map.set(r.date, {
+        date: r.date,
+        totalRevenue: r.saleValue,
+        totalCollection: r.collectionReceived,
+        totalUnits: units,
+        storeCount: 1,
+        totalTSOs: r.numTSO,
+        totalSampleGiven: r.sampleGiven,
+        totalSampleConsumed: r.sampleConsumed,
+        totalPromotionHours: r.promotionDuration,
+      });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('sales');
@@ -106,17 +139,14 @@ export default function DashboardPage() {
     setAppliedLocation('all');
   };
 
-  const filteredStoreSummaries = data?.storeSummaries.filter((store) => {
-    if (appliedLocation === 'all') return true;
-    return store.storeCode === appliedLocation;
-  }) ?? [];
-
   const filteredRecords = data?.salesRecords.filter((record) => {
     if (appliedLocation === 'all') return true;
     return record.location === appliedLocation;
   }) ?? [];
 
-  const totalRevenue = filteredRecords.reduce((sum, r) => sum + r.saleValue, 0);
+  const dailySummariesForTrend = appliedLocation === 'all'
+    ? (data?.dailySummaries ?? [])
+    : aggregateDailySummariesFromRecords(filteredRecords);
 
   if (isLoading && !data) {
     return (
@@ -158,9 +188,7 @@ export default function DashboardPage() {
         {data && activeTab === 'sales' && (
           <>
             <div className="mb-6">
-              <SummaryCards
-                totalRevenue={totalRevenue}
-              />
+              <SummaryCards records={filteredRecords} />
             </div>
 
             <div className="mb-6">
@@ -168,15 +196,17 @@ export default function DashboardPage() {
             </div>
 
             <div className="mb-6">
+              <SalesPromotionTrend data={dailySummariesForTrend} />
+            </div>
+
+            <div className="mb-6">
               <ProductUnitSales records={filteredRecords} />
             </div>
-          </>
-        )}
 
-        {data && activeTab === 'promotions' && (
-          <div className="mb-6">
-            <PromotionImpact records={filteredRecords} />
-          </div>
+            <div className="mb-6">
+              <PromotionImpact records={filteredRecords} />
+            </div>
+          </>
         )}
 
         {activeTab === 'invoices' && (

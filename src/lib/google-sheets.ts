@@ -151,6 +151,10 @@ function aggregateDailySummaries(records: SalesRecord[]): DailySummary[] {
       existing.totalCollection += record.collectionReceived;
       existing.totalUnits += units;
       existing.storeCount += 1;
+      existing.totalTSOs += record.numTSO;
+      existing.totalSampleGiven += record.sampleGiven;
+      existing.totalSampleConsumed += record.sampleConsumed;
+      existing.totalPromotionHours += record.promotionDuration;
     } else {
       dailyMap.set(record.date, {
         date: record.date,
@@ -158,6 +162,10 @@ function aggregateDailySummaries(records: SalesRecord[]): DailySummary[] {
         totalCollection: record.collectionReceived,
         totalUnits: units,
         storeCount: 1,
+        totalTSOs: record.numTSO,
+        totalSampleGiven: record.sampleGiven,
+        totalSampleConsumed: record.sampleConsumed,
+        totalPromotionHours: record.promotionDuration,
       });
     }
   }

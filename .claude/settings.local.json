@@ -6,7 +6,7 @@
       "Bash(python3:*)",
       "Bash(node:*)",
       "Bash(npx vercel:*)",
-      "WebFetch(domain:docs.google.com)"
+      "Bash(curl:*)"
     ]
   }
 }

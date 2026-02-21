@@ -72,6 +72,10 @@ export interface DailySummary {
   totalCollection: number;
   totalUnits: number;
   storeCount: number;
+  totalTSOs: number;
+  totalSampleGiven: number;
+  totalSampleConsumed: number;
+  totalPromotionHours: number;
 }
 
 export interface StoreSummary {
