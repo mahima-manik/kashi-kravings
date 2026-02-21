@@ -1,3 +1,4 @@
+import { google } from 'googleapis';
 import {
   SalesRecord,
   DashboardData,
@@ -12,7 +13,10 @@ let cachedData: DashboardData | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-const SHEET_ID = process.env.GOOGLE_SHEET_ID || '14s9pOyfqx_kvJOWruI_79GmH0qKKnDHlzC8gR4LuD38';
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+if (!SHEET_ID) {
+  throw new Error('GOOGLE_SHEET_ID environment variable is required');
+}
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -225,26 +229,27 @@ function getTodayString(): string {
   return today.toISOString().split('T')[0];
 }
 
-async function fetchPublicSheet(): Promise<string[][]> {
-  // Fetch public Google Sheet as CSV
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Form%20Responses%201`;
-
-  const response = await fetch(url, {
-    headers: {
-      'Accept': 'text/csv',
-    },
-    next: { revalidate: 300 }, // Cache for 5 minutes
+async function fetchSheetData(): Promise<string[][]> {
+  const auth = new google.auth.JWT({
+    email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+    key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch sheet: ${response.status}`);
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: 'Form Responses 1',
+  });
+
+  const rows = response.data.values;
+  if (!rows || rows.length < 2) {
+    return [];
   }
 
-  const csvText = await response.text();
-  const lines = csvText.split('\n').filter(line => line.trim());
-
-  // Skip header row, parse remaining rows
-  return lines.slice(1).map(line => parseCSVLine(line));
+  // Skip header row, return remaining rows as string arrays
+  return rows.slice(1).map((row) => row.map(String));
 }
 
 export async function fetchSalesData(
@@ -255,7 +260,7 @@ export async function fetchSalesData(
     return cachedData;
   }
 
-  const rows = await fetchPublicSheet();
+  const rows = await fetchSheetData();
 
   const salesRecords = rows
     .map((row, index) => parseSalesRow(row, index + 2))
