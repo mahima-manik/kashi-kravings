@@ -170,23 +170,23 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mb-6">
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            location={location}
-            activePreset={activePreset}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            onLocationChange={(loc) => { setLocation(loc); setAppliedLocation(loc); }}
-            onApply={handleApplyFilters}
-            onReset={handleReset}
-            onQuickSelect={handleQuickSelect}
-          />
-        </div>
-
         {data && activeTab === 'sales' && (
           <>
+            <div className="mb-6">
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                location={location}
+                activePreset={activePreset}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onLocationChange={(loc) => { setLocation(loc); setAppliedLocation(loc); }}
+                onApply={handleApplyFilters}
+                onReset={handleReset}
+                onQuickSelect={handleQuickSelect}
+              />
+            </div>
+
             <div className="mb-6">
               <SummaryCards records={filteredRecords} />
             </div>
