@@ -12,7 +12,7 @@ export const STORES: Store[] = [
   { code: 'KK-BL-04', name: 'Blue Lassi' },
   { code: 'KK-SL-05', name: 'Siwon Lassi' },
   { code: 'KK-PBC-07', name: 'Popular Baati Chokha' },
-  { code: 'KK-GB-08', name: 'GreenBerry`' },
+  { code: 'KK-GB-08', name: 'GreenBerry' },
 ];
 
 export const STORE_MAP: Record<string, string> = STORES.reduce(
@@ -116,6 +116,29 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+// Invoice types (from MyBillBook CSV export)
+export interface Invoice {
+  invoiceNo: string;
+  invoiceDate: string;
+  contactName: string;
+  amount: number;
+  remainingAmount: number;
+  invoiceStatus: 'Paid' | 'Unpaid' | string;
+  dueDate: string;
+  invoiceLink: string;
+  paymentType: string;
+  partyCategory: string;
+  createdBy: string;
+}
+
+export interface InvoiceData {
+  invoices: Invoice[];
+  totalAmount: number;
+  totalRemaining: number;
+  paidCount: number;
+  unpaidCount: number;
 }
 
 // Notification types

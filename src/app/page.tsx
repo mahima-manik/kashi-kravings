@@ -10,6 +10,7 @@ import {
   DateRangePicker,
   ProductUnitSales,
   PromotionImpact,
+  InvoicesView,
 } from '@/components/Dashboard';
 import { DashboardData, ApiResponse } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -175,6 +176,12 @@ export default function DashboardPage() {
         {data && activeTab === 'promotions' && (
           <div className="mb-6">
             <PromotionImpact records={filteredRecords} />
+          </div>
+        )}
+
+        {activeTab === 'invoices' && (
+          <div className="mb-6">
+            <InvoicesView />
           </div>
         )}
       </main>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 const tabs = [
   { id: 'sales', label: 'Sales' },
   { id: 'promotions', label: 'Promotions' },
+  { id: 'invoices', label: 'Invoices' },
 ];
 
 interface HeaderProps {
@@ -36,7 +37,7 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             <div>
               <h1 className="text-lg font-bold text-white">Kashi Kravings</h1>
               <p className="text-xs text-gray-400">
-                {activeTab === 'sales' ? 'Sales Dashboard' : 'Promotions Dashboard'}
+                {activeTab === 'sales' ? 'Sales Dashboard' : activeTab === 'promotions' ? 'Promotions Dashboard' : 'Invoice Management'}
               </p>
             </div>
             <nav className="flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
