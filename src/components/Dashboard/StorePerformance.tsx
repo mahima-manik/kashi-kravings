@@ -57,7 +57,9 @@ export default function SalesByLocation({ records }: SalesByLocationProps) {
   }
 
   const sortedDates = Array.from(dailyStoreMap.keys()).sort();
-  const sortedStores = Array.from(storeNames).sort();
+  const sortedStores = Array.from(storeNames).filter((store) => {
+    return records.some((r) => r.storeName === store && r.saleValue > 0);
+  }).sort();
 
   const chartData = sortedDates.map((date) => {
     const entry: Record<string, string | number> = {
