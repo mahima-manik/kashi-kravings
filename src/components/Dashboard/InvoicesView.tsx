@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Upload, FileText, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
-import type { InvoiceData, ApiResponse } from '@/lib/types';
+import { Upload, FileText, ExternalLink, CheckCircle, AlertCircle, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import type { Invoice, InvoiceData, ApiResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 
 export default function InvoicesView() {
@@ -10,6 +10,9 @@ export default function InvoicesView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<'date' | 'amount' | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -64,6 +67,33 @@ export default function InvoicesView() {
     if (file) handleUpload(file);
   };
 
+  const handleSort = (field: 'date' | 'amount') => {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  };
+
+  const parseDate = (d: string) => {
+    const parts = d.split('/');
+    if (parts.length === 3) return new Date(+parts[2], +parts[1] - 1, +parts[0]).getTime();
+    return 0;
+  };
+
+  const filteredInvoices = (data?.invoices ?? [])
+    .filter((inv) => {
+      if (!searchQuery) return true;
+      return inv.contactName.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+    .sort((a: Invoice, b: Invoice) => {
+      if (!sortField) return 0;
+      const dir = sortDir === 'asc' ? 1 : -1;
+      if (sortField === 'date') return (parseDate(a.invoiceDate) - parseDate(b.invoiceDate)) * dir;
+      return (a.amount - b.amount) * dir;
+    });
+
   return (
     <div className="space-y-6">
       {/* Upload Section */}
@@ -117,11 +147,23 @@ export default function InvoicesView() {
 
       {/* Invoice Table */}
       <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
-        <div className="px-6 py-4 border-b border-surface-border">
+        <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <FileText className="h-5 w-5 text-brand-gold" />
             All Invoices
           </h2>
+          {data && data.invoices.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-3 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-gold/50 w-64"
+              />
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -136,9 +178,9 @@ export default function InvoicesView() {
               <thead>
                 <tr className="bg-surface-card-hover text-gray-400 text-left text-xs uppercase tracking-wider">
                   <th className="px-4 py-3">Invoice #</th>
-                  <th className="px-4 py-3">Date</th>
+                  <SortableHeader field="date" label="Date" currentField={sortField} direction={sortDir} onSort={handleSort} />
                   <th className="px-4 py-3">Contact</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
+                  <SortableHeader field="amount" label="Amount" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
                   <th className="px-4 py-3 text-right">Remaining</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Due Date</th>
@@ -146,7 +188,7 @@ export default function InvoicesView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
-                {data.invoices.map((inv) => (
+                {filteredInvoices.map((inv) => (
                   <tr key={inv.invoiceNo} className="hover:bg-surface-card-hover transition-colors">
                     <td className="px-4 py-3 text-white font-medium">{inv.invoiceNo}</td>
                     <td className="px-4 py-3 text-gray-300">{inv.invoiceDate}</td>
@@ -181,12 +223,54 @@ export default function InvoicesView() {
                     </td>
                   </tr>
                 ))}
+                {filteredInvoices.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                      No invoices match &quot;{searchQuery}&quot;
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function SortableHeader({
+  field, label, currentField, direction, onSort, align,
+}: {
+  field: 'date' | 'amount';
+  label: string;
+  currentField: 'date' | 'amount' | null;
+  direction: 'asc' | 'desc';
+  onSort: (field: 'date' | 'amount') => void;
+  align?: 'right';
+}) {
+  const active = currentField === field;
+  return (
+    <th
+      className={`px-4 py-3 cursor-pointer select-none hover:text-gray-200 transition-colors ${align === 'right' ? 'text-right' : ''}`}
+      onClick={() => onSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {align === 'right' && (
+          <span className="inline-flex flex-col leading-none">
+            <ChevronUp className={`h-3 w-3 ${active && direction === 'asc' ? 'text-brand-gold' : 'text-gray-600'}`} />
+            <ChevronDown className={`h-3 w-3 -mt-1 ${active && direction === 'desc' ? 'text-brand-gold' : 'text-gray-600'}`} />
+          </span>
+        )}
+        {label}
+        {align !== 'right' && (
+          <span className="inline-flex flex-col leading-none">
+            <ChevronUp className={`h-3 w-3 ${active && direction === 'asc' ? 'text-brand-gold' : 'text-gray-600'}`} />
+            <ChevronDown className={`h-3 w-3 -mt-1 ${active && direction === 'desc' ? 'text-brand-gold' : 'text-gray-600'}`} />
+          </span>
+        )}
+      </span>
+    </th>
   );
 }
 
