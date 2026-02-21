@@ -12,6 +12,7 @@ export const STORES: Store[] = [
   { code: 'KK-BL-04', name: 'Blue Lassi' },
   { code: 'KK-SL-05', name: 'Siwon Lassi' },
   { code: 'KK-PBC-07', name: 'Popular Baati Chokha' },
+  { code: 'KK-GB-08', name: 'GreenBerry`' },
 ];
 
 export const STORE_MAP: Record<string, string> = STORES.reduce(

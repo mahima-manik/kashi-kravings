@@ -159,7 +159,6 @@ export default function DashboardPage() {
             <div className="mb-6">
               <SummaryCards
                 totalRevenue={totalRevenue}
-                transactionCount={filteredRecords.length}
               />
             </div>
 
