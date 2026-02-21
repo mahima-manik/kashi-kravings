@@ -11,7 +11,6 @@ import {
   ProductUnitSales,
   PromotionImpact,
   SalesPromotionTrend,
-  InvoicesView,
 } from '@/components/Dashboard';
 import { DashboardData, DailySummary, SalesRecord, ApiResponse } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -49,7 +48,6 @@ function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummar
 }
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('sales');
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,7 +159,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-surface-primary">
-      <Header onRefresh={() => fetchData()} isLoading={isLoading} activeTab={activeTab} onTabChange={setActiveTab} />
+      <Header onRefresh={() => fetchData()} isLoading={isLoading} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
@@ -170,7 +168,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {data && activeTab === 'sales' && (
+        {data && (
           <>
             <div className="mb-6">
               <DateRangePicker
@@ -207,12 +205,6 @@ export default function DashboardPage() {
               <PromotionImpact records={filteredRecords} />
             </div>
           </>
-        )}
-
-        {activeTab === 'invoices' && (
-          <div className="mb-6">
-            <InvoicesView />
-          </div>
         )}
       </main>
     </div>

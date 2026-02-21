@@ -1,28 +1,30 @@
 'use client';
 
 import { LogOut, RefreshCw, Sun, Moon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 const tabs = [
-  { id: 'sales', label: 'Sales' },
-  { id: 'invoices', label: 'Invoices' },
+  { id: 'sales', label: 'Sales', href: '/' },
+  { id: 'invoices', label: 'Invoices', href: '/invoices' },
 ];
 
 interface HeaderProps {
-  onRefresh: () => void;
-  isLoading: boolean;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  onRefresh?: () => void;
+  isLoading?: boolean;
 }
 
-export default function Header({ onRefresh, isLoading, activeTab, onTabChange }: HeaderProps) {
+export default function Header({ onRefresh, isLoading }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  const activeTab = pathname === '/invoices' ? 'invoices' : 'sales';
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
@@ -43,9 +45,9 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
             <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
             <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
               {tabs.map((tab) => (
-                <button
+                <Link
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  href={tab.href}
                   className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab.id
                       ? 'text-brand-gold'
@@ -53,7 +55,7 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
                   }`}
                 >
                   {tab.label}
-                </button>
+                </Link>
               ))}
             </nav>
           </div>
@@ -68,14 +70,16 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
                 {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
             )}
-            <button
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-surface-card-hover border border-surface-border-light text-sm font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline ml-2">Refresh</span>
-            </button>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-surface-card-hover border border-surface-border-light text-sm font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline ml-2">Refresh</span>
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-chocolate-700 hover:bg-chocolate-600 text-sm font-medium rounded-lg text-white transition-colors"
@@ -89,9 +93,9 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
         {/* Mobile tabs */}
         <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
           {tabs.map((tab) => (
-            <button
+            <Link
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+              href={tab.href}
               className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                 activeTab === tab.id
                   ? 'text-brand-gold bg-brand-gold/10'
@@ -99,7 +103,7 @@ export default function Header({ onRefresh, isLoading, activeTab, onTabChange }:
               }`}
             >
               {tab.label}
-            </button>
+            </Link>
           ))}
         </nav>
       </div>
