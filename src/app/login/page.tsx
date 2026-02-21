@@ -50,12 +50,12 @@ export default function LoginPage() {
               alt="Kashi Kravings"
               className="w-28 h-28 mx-auto mb-4 rounded-2xl object-cover"
             />
-            <p className="text-gray-400 text-sm">Sales Dashboard</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Sales Dashboard</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-900/30 border border-red-700/50 text-red-300 px-4 py-3 rounded-lg mb-6 text-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}
@@ -63,7 +63,7 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -72,13 +72,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
+                className="w-full px-4 py-3 bg-surface-primary border border-surface-border-light rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
                 placeholder="admin@kashikravings.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -88,13 +88,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 pr-12 bg-surface-primary border border-surface-border-light rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
+                  className="w-full px-4 py-3 pr-12 bg-surface-primary border border-surface-border-light rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-transparent outline-none transition-colors"
                   placeholder="Enter password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>

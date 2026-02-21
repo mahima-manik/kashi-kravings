@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { SalesRecord } from '@/lib/types';
+import { useChartTheme } from '@/lib/useChartTheme';
 
 interface ProductUnitSalesProps {
   records: SalesRecord[];
@@ -27,6 +28,8 @@ const PRODUCT_FIELDS: { key: keyof SalesRecord; label: string }[] = [
 ];
 
 export default function ProductUnitSales({ records }: ProductUnitSalesProps) {
+  const chart = useChartTheme();
+
   const chartData = PRODUCT_FIELDS.map(({ key, label }) => ({
     name: label,
     units: records.reduce((sum, r) => sum + (r[key] as number), 0),
@@ -34,28 +37,28 @@ export default function ProductUnitSales({ records }: ProductUnitSalesProps) {
 
   return (
     <div className="bg-surface-card rounded-xl border border-surface-border p-6">
-      <h3 className="text-base font-semibold text-white mb-6">Unit Sales by Product</h3>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Unit Sales by Product</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              tick={{ fontSize: 11, fill: chart.axisText }}
               tickLine={false}
-              axisLine={{ stroke: '#2a2a3a' }}
+              axisLine={{ stroke: chart.grid }}
               interval={0}
               angle={-35}
               textAnchor="end"
               height={60}
             />
             <YAxis
-              tick={{ fontSize: 12, fill: '#9ca3af' }}
+              tick={{ fontSize: 12, fill: chart.axisText }}
               tickLine={false}
-              axisLine={{ stroke: '#2a2a3a' }}
+              axisLine={{ stroke: chart.grid }}
               allowDecimals={false}
             />
             <Tooltip
@@ -64,13 +67,13 @@ export default function ProductUnitSales({ records }: ProductUnitSalesProps) {
                 'Units Sold',
               ]}
               contentStyle={{
-                backgroundColor: '#1a1a24',
-                border: '1px solid #2a2a3a',
+                backgroundColor: chart.tooltipBg,
+                border: `1px solid ${chart.tooltipBorder}`,
                 borderRadius: '8px',
-                color: '#fff',
+                color: chart.tooltipText,
               }}
-              labelStyle={{ color: '#9ca3af' }}
-              cursor={{ fill: 'rgba(139, 125, 60, 0.1)' }}
+              labelStyle={{ color: chart.tooltipLabel }}
+              cursor={{ fill: chart.cursorFill }}
             />
             <Bar dataKey="units" fill="#A69A5B" radius={[4, 4, 0, 0]} barSize={32} />
           </BarChart>

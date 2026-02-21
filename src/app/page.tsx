@@ -123,7 +123,7 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-surface-primary flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-brand-gold mx-auto" />
-          <p className="mt-4 text-gray-400">Loading dashboard...</p>
+          <p className="mt-4 text-gray-500 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -135,7 +135,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {error && (
-          <div className="mb-4 bg-amber-900/30 border border-amber-700/50 text-amber-300 px-4 py-3 rounded-lg text-sm">
+          <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}

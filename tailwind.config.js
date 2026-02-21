@@ -5,6 +5,7 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -15,11 +16,11 @@ module.exports = {
           ivory: '#FAF3E6',
         },
         surface: {
-          primary: '#0d0d12',
-          card: '#1a1a24',
-          'card-hover': '#22222e',
-          border: '#2a2a3a',
-          'border-light': '#3a3a4a',
+          primary: 'var(--surface-primary)',
+          card: 'var(--surface-card)',
+          'card-hover': 'var(--surface-card-hover)',
+          border: 'var(--surface-border)',
+          'border-light': 'var(--surface-border-light)',
         },
         chocolate: {
           50: '#faf5f2',

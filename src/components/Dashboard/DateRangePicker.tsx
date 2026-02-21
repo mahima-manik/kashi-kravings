@@ -48,7 +48,7 @@ const PRESETS: { key: PresetKey; label: string; getRange: () => { start: string;
 ];
 
 const inputClass =
-  'bg-surface-card-hover border border-surface-border-light text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-gold';
+  'bg-surface-card-hover border border-surface-border-light text-gray-900 dark:text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-gold';
 
 export default function DateRangePicker({
   startDate,
@@ -78,7 +78,7 @@ export default function DateRangePicker({
     <div className="bg-surface-card rounded-xl border border-surface-border px-6 py-4 space-y-4">
       {/* Row 1: Presets + Location */}
       <div className="flex flex-wrap items-center gap-3">
-        <Calendar className="h-4 w-4 text-gray-400 hidden sm:block" />
+        <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-400 hidden sm:block" />
         {/* Preset buttons */}
         {PRESETS.map((preset) => (
           <button
@@ -87,7 +87,7 @@ export default function DateRangePicker({
             className={`text-sm rounded-lg px-4 py-2 transition-colors border ${
               activePreset === preset.key && !showCustom
                 ? 'bg-brand-olive border-brand-gold text-white'
-                : 'bg-surface-card-hover border-surface-border-light text-gray-300 hover:text-white hover:border-brand-gold/50'
+                : 'bg-surface-card-hover border-surface-border-light text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-brand-gold/50'
             }`}
           >
             {preset.label}
@@ -100,7 +100,7 @@ export default function DateRangePicker({
           className={`text-sm rounded-lg px-4 py-2 transition-colors border flex items-center gap-1.5 ${
             showCustom
               ? 'bg-brand-olive border-brand-gold text-white'
-              : 'bg-surface-card-hover border-surface-border-light text-gray-300 hover:text-white hover:border-brand-gold/50'
+              : 'bg-surface-card-hover border-surface-border-light text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-brand-gold/50'
           }`}
         >
           Custom
@@ -112,7 +112,7 @@ export default function DateRangePicker({
 
         {/* Location filter */}
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-400 whitespace-nowrap">Location:</label>
+          <label className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Location:</label>
           <select
             value={location}
             onChange={(e) => onLocationChange(e.target.value)}
@@ -130,7 +130,7 @@ export default function DateRangePicker({
         {/* Reset */}
         <button
           onClick={onReset}
-          className="text-sm text-gray-400 hover:text-white transition-colors ml-auto"
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors ml-auto"
         >
           Reset
         </button>
@@ -140,7 +140,7 @@ export default function DateRangePicker({
       {showCustom && (
         <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-surface-border">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-400 whitespace-nowrap">From:</label>
+            <label className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">From:</label>
             <input
               type="date"
               value={startDate}
@@ -150,7 +150,7 @@ export default function DateRangePicker({
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-400 whitespace-nowrap">To:</label>
+            <label className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">To:</label>
             <input
               type="date"
               value={endDate}

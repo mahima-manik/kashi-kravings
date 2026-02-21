@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { SalesRecord } from '@/lib/types';
 import { formatCurrencyCompact } from '@/lib/format';
+import { useChartTheme } from '@/lib/useChartTheme';
 
 interface SalesByLocationProps {
   records: SalesRecord[];
@@ -37,6 +38,8 @@ function formatDateLabel(dateStr: string): string {
 }
 
 export default function SalesByLocation({ records }: SalesByLocationProps) {
+  const chart = useChartTheme();
+
   // Aggregate daily sales per store
   const dailyStoreMap = new Map<string, Map<string, number>>();
   const storeNames = new Set<string>();
@@ -70,25 +73,25 @@ export default function SalesByLocation({ records }: SalesByLocationProps) {
 
   return (
     <div className="bg-surface-card rounded-xl border border-surface-border p-6">
-      <h3 className="text-base font-semibold text-white mb-6">Sales by Location</h3>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Sales by Location</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
             margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
             <XAxis
               dataKey="dateLabel"
-              tick={{ fontSize: 12, fill: '#9ca3af' }}
+              tick={{ fontSize: 12, fill: chart.axisText }}
               tickLine={false}
-              axisLine={{ stroke: '#2a2a3a' }}
+              axisLine={{ stroke: chart.grid }}
             />
             <YAxis
               tickFormatter={formatCurrencyCompact}
-              tick={{ fontSize: 12, fill: '#9ca3af' }}
+              tick={{ fontSize: 12, fill: chart.axisText }}
               tickLine={false}
-              axisLine={{ stroke: '#2a2a3a' }}
+              axisLine={{ stroke: chart.grid }}
             />
             <Tooltip
               labelFormatter={(_label, payload) => {
@@ -105,15 +108,15 @@ export default function SalesByLocation({ records }: SalesByLocationProps) {
                 name,
               ]}
               contentStyle={{
-                backgroundColor: '#1a1a24',
-                border: '1px solid #2a2a3a',
+                backgroundColor: chart.tooltipBg,
+                border: `1px solid ${chart.tooltipBorder}`,
                 borderRadius: '8px',
-                color: '#fff',
+                color: chart.tooltipText,
               }}
-              labelStyle={{ color: '#9ca3af' }}
+              labelStyle={{ color: chart.tooltipLabel }}
             />
             <Legend
-              wrapperStyle={{ fontSize: 12, color: '#9ca3af' }}
+              wrapperStyle={{ fontSize: 12, color: chart.axisText }}
             />
             {sortedStores.map((store) => (
               <Line

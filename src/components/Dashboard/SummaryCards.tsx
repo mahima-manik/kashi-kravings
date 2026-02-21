@@ -17,8 +17,8 @@ export default function SummaryCards({
           <IndianRupee className="h-6 w-6 text-brand-gold" />
         </div>
         <div>
-          <p className="text-sm text-gray-400">Total Sales Value</p>
-          <p className="text-3xl font-bold text-white tracking-tight">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Sales Value</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
             {formatCurrency(totalRevenue)}
           </p>
         </div>

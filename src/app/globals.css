@@ -2,9 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --surface-primary: #f8f9fa;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f3f4f6;
+  --surface-border: #e5e7eb;
+  --surface-border-light: #d1d5db;
+  color-scheme: light;
+}
+
+.dark {
+  --surface-primary: #0d0d12;
+  --surface-card: #1a1a24;
+  --surface-card-hover: #22222e;
+  --surface-border: #2a2a3a;
+  --surface-border-light: #3a3a4a;
+  color-scheme: dark;
+}
+
 body {
-  color: #ffffff;
-  background: #0d0d12;
+  color: var(--foreground);
+  background: var(--surface-primary);
 }
 
 /* Custom scrollbar */
@@ -14,21 +32,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a24;
+  background: var(--surface-card);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a3a4a;
+  background: var(--surface-border-light);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a4a5a;
-}
-
-/* Dark date input and select styling */
-input[type='date'],
-select {
-  color-scheme: dark;
+  background: var(--surface-border);
 }
