@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, RefreshCw, Sun, Moon } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -11,12 +11,7 @@ const tabs = [
   { id: 'invoices', label: 'Invoices', href: '/invoices' },
 ];
 
-interface HeaderProps {
-  onRefresh?: () => void;
-  isLoading?: boolean;
-}
-
-export default function Header({ onRefresh, isLoading }: HeaderProps) {
+export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
@@ -68,16 +63,6 @@ export default function Header({ onRefresh, isLoading }: HeaderProps) {
                 aria-label="Toggle theme"
               >
                 {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-            )}
-            {onRefresh && (
-              <button
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-surface-card-hover border border-surface-border-light text-sm font-medium rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline ml-2">Refresh</span>
               </button>
             )}
             <button

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import type { PresetKey } from '@/components/Dashboard/DateRangePicker';
 import {
-  Header,
   SummaryCards,
   SalesByLocation,
   DateRangePicker,
@@ -148,7 +147,7 @@ export default function DashboardPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="min-h-screen bg-surface-primary flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-brand-gold mx-auto" />
           <p className="mt-4 text-gray-500 dark:text-gray-400">Loading dashboard...</p>
@@ -158,19 +157,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-primary">
-      <Header onRefresh={() => fetchData()} isLoading={isLoading} />
+    <>
+      {error && (
+        <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {error && (
-          <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
-        {data && (
-          <>
-            <div className="mb-6">
+      {data && (
+        <>
+          <div className="mb-6">
               <DateRangePicker
                 startDate={startDate}
                 endDate={endDate}
@@ -183,30 +179,29 @@ export default function DashboardPage() {
                 onReset={handleReset}
                 onQuickSelect={handleQuickSelect}
               />
-            </div>
+          </div>
 
-            <div className="mb-6">
-              <SummaryCards records={filteredRecords} />
-            </div>
+          <div className="mb-6">
+            <SummaryCards records={filteredRecords} />
+          </div>
 
-            <div className="mb-6">
-              <SalesByLocation records={filteredRecords} />
-            </div>
+          <div className="mb-6">
+            <SalesByLocation records={filteredRecords} />
+          </div>
 
-            <div className="mb-6">
-              <SalesPromotionTrend data={dailySummariesForTrend} />
-            </div>
+          <div className="mb-6">
+            <SalesPromotionTrend data={dailySummariesForTrend} />
+          </div>
 
-            <div className="mb-6">
-              <ProductUnitSales records={filteredRecords} />
-            </div>
+          <div className="mb-6">
+            <ProductUnitSales records={filteredRecords} />
+          </div>
 
-            <div className="mb-6">
-              <PromotionImpact records={filteredRecords} />
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+          <div className="mb-6">
+            <PromotionImpact records={filteredRecords} />
+          </div>
+        </>
+      )}
+    </>
   );
 }
