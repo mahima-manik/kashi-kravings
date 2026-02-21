@@ -11,9 +11,10 @@ export default function InvoicesView() {
   const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<'date' | 'amount' | null>(null);
+  const [sortField, setSortField] = useState<'date' | 'amount' | 'remaining' | 'remaining' | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showUpload, setShowUpload] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -69,7 +70,7 @@ export default function InvoicesView() {
     if (file) handleUpload(file);
   };
 
-  const handleSort = (field: 'date' | 'amount') => {
+  const handleSort = (field: 'date' | 'amount' | 'remaining') => {
     if (sortField === field) {
       setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
@@ -86,13 +87,16 @@ export default function InvoicesView() {
 
   const filteredInvoices = (data?.invoices ?? [])
     .filter((inv) => {
-      if (!searchQuery) return true;
-      return inv.contactName.toLowerCase().includes(searchQuery.toLowerCase());
+      if (searchQuery && !inv.contactName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (statusFilter === 'paid' && inv.invoiceStatus !== 'Paid') return false;
+      if (statusFilter === 'unpaid' && inv.invoiceStatus === 'Paid') return false;
+      return true;
     })
     .sort((a: Invoice, b: Invoice) => {
       if (!sortField) return 0;
       const dir = sortDir === 'asc' ? 1 : -1;
       if (sortField === 'date') return (parseDate(a.invoiceDate) - parseDate(b.invoiceDate)) * dir;
+      if (sortField === 'remaining') return (a.remainingAmount - b.remainingAmount) * dir;
       return (a.amount - b.amount) * dir;
     });
 
@@ -144,12 +148,12 @@ export default function InvoicesView() {
       {/* Summary Cards */}
       {data && data.invoices.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard label="Total Invoices" value={String(data.invoices.length)} />
-          <SummaryCard label="Total Amount" value={formatCurrency(data.totalAmount)} />
-          <SummaryCard label="Remaining" value={formatCurrency(data.totalRemaining)} />
+          <SummaryCard label="Total Invoices" value={String(filteredInvoices.length)} />
+          <SummaryCard label="Total Amount" value={formatCurrency(filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
+          <SummaryCard label="Remaining" value={formatCurrency(filteredInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
           <SummaryCard
             label="Status"
-            value={`${data.paidCount} Paid / ${data.unpaidCount} Unpaid`}
+            value={`${filteredInvoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${filteredInvoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
           />
         </div>
       )}
@@ -163,16 +167,33 @@ export default function InvoicesView() {
           </h2>
           <div className="flex items-center gap-3">
             {data && data.invoices.length > 0 && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-3 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-brand-gold/50 w-64"
-                />
-              </div>
+              <>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Search by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-3 py-2 bg-surface-card-hover border border-surface-border-light rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-brand-gold/50 w-64"
+                  />
+                </div>
+                <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
+                  {(['all', 'paid', 'unpaid'] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 py-2 capitalize transition-colors ${
+                        statusFilter === status
+                          ? 'bg-brand-gold/20 text-brand-gold font-medium'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             <button
               onClick={() => setShowUpload(true)}
@@ -199,9 +220,8 @@ export default function InvoicesView() {
                   <SortableHeader field="date" label="Date" currentField={sortField} direction={sortDir} onSort={handleSort} />
                   <th className="px-4 py-3">Contact</th>
                   <SortableHeader field="amount" label="Amount" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
-                  <th className="px-4 py-3 text-right">Remaining</th>
+                  <SortableHeader field="remaining" label="Remaining" currentField={sortField} direction={sortDir} onSort={handleSort} align="right" />
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Due Date</th>
                   <th className="px-4 py-3">Link</th>
                 </tr>
               </thead>
@@ -222,7 +242,6 @@ export default function InvoicesView() {
                         {inv.invoiceStatus}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{inv.dueDate || '—'}</td>
                     <td className="px-4 py-3">
                       {inv.invoiceLink && (
                         <a
@@ -239,7 +258,7 @@ export default function InvoicesView() {
                 ))}
                 {filteredInvoices.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
                       No invoices match &quot;{searchQuery}&quot;
                     </td>
                   </tr>
@@ -256,11 +275,11 @@ export default function InvoicesView() {
 function SortableHeader({
   field, label, currentField, direction, onSort, align,
 }: {
-  field: 'date' | 'amount';
+  field: 'date' | 'amount' | 'remaining';
   label: string;
-  currentField: 'date' | 'amount' | null;
+  currentField: 'date' | 'amount' | 'remaining' | 'remaining' | null;
   direction: 'asc' | 'desc';
-  onSort: (field: 'date' | 'amount') => void;
+  onSort: (field: 'date' | 'amount' | 'remaining') => void;
   align?: 'right';
 }) {
   const active = currentField === field;
