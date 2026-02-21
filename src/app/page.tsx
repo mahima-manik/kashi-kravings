@@ -170,7 +170,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="mb-6">
-              <SalesByLocation data={filteredStoreSummaries} />
+              <SalesByLocation records={filteredRecords} />
             </div>
 
             <div className="mb-6">
