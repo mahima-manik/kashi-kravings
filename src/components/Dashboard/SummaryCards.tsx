@@ -1,13 +1,10 @@
 'use client';
 
-import { IndianRupee, Percent, AlertCircle } from 'lucide-react';
+import { IndianRupee } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 
 interface SummaryCardsProps {
   totalRevenue: number;
-  totalCollection: number;
-  totalOutstanding: number;
-  collectionRate: number;
   transactionCount: number;
 }
 
@@ -46,16 +43,10 @@ function Card({
 
 export default function SummaryCards({
   totalRevenue,
-  totalCollection,
-  totalOutstanding,
-  collectionRate,
   transactionCount,
 }: SummaryCardsProps) {
-  const collectionSubtitle = collectionRate >= 50 ? 'Good collection' : 'Needs improvement';
-  const collectionSubColor = collectionRate >= 50 ? 'text-green-400' : 'text-orange-400';
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card
         title="Total Sales Value"
         value={formatCurrency(totalRevenue)}
@@ -64,28 +55,11 @@ export default function SummaryCards({
         iconBg="bg-green-900/40"
       />
       <Card
-        title="Total Collection"
-        value={formatCurrency(totalCollection)}
-        subtitle="Amount received"
+        title="Transactions"
+        value={transactionCount.toLocaleString('en-IN')}
+        subtitle="Total records"
         icon={<IndianRupee className="h-5 w-5 text-green-400" />}
         iconBg="bg-green-900/40"
-      />
-      <Card
-        title="Collection Rate"
-        value={`${collectionRate.toFixed(1)}%`}
-        subtitle={collectionSubtitle}
-        subtitleColor={collectionSubColor}
-        icon={<Percent className="h-5 w-5 text-gray-300" />}
-        iconBg="bg-gray-700/40"
-      />
-      <Card
-        title="Outstanding Amount"
-        value={formatCurrency(totalOutstanding)}
-        subtitle="Pending collection"
-        subtitleColor="text-red-400"
-        icon={<AlertCircle className="h-5 w-5 text-red-400" />}
-        iconBg="bg-red-900/40"
-        borderColor="border-red-900/30"
       />
     </div>
   );

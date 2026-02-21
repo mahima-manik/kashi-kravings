@@ -116,9 +116,6 @@ export default function DashboardPage() {
   }) ?? [];
 
   const totalRevenue = filteredRecords.reduce((sum, r) => sum + r.saleValue, 0);
-  const totalCollection = filteredRecords.reduce((sum, r) => sum + r.collectionReceived, 0);
-  const totalOutstanding = totalRevenue - totalCollection;
-  const collectionRate = totalRevenue > 0 ? (totalCollection / totalRevenue) * 100 : 0;
 
   if (isLoading && !data) {
     return (
@@ -162,9 +159,6 @@ export default function DashboardPage() {
             <div className="mb-6">
               <SummaryCards
                 totalRevenue={totalRevenue}
-                totalCollection={totalCollection}
-                totalOutstanding={totalOutstanding}
-                collectionRate={collectionRate}
                 transactionCount={filteredRecords.length}
               />
             </div>

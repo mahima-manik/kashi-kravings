@@ -9,7 +9,7 @@ interface SalesTableProps {
   data: SalesRecord[];
 }
 
-type SortField = 'date' | 'storeName' | 'saleValue' | 'collectionReceived';
+type SortField = 'date' | 'storeName' | 'saleValue';
 type SortDirection = 'asc' | 'desc';
 
 const PRODUCT_BADGES: { key: keyof SalesRecord; label: string; color: string }[] = [
@@ -64,9 +64,6 @@ export default function SalesTable({ data }: SalesTableProps) {
         case 'saleValue':
           comparison = a.saleValue - b.saleValue;
           break;
-        case 'collectionReceived':
-          comparison = a.collectionReceived - b.collectionReceived;
-          break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
@@ -119,7 +116,6 @@ export default function SalesTable({ data }: SalesTableProps) {
                 { field: 'storeName' as SortField, label: 'Store', align: 'text-left' },
                 { field: null, label: 'Products', align: 'text-left' },
                 { field: 'saleValue' as SortField, label: 'Sale Value', align: 'text-right' },
-                { field: 'collectionReceived' as SortField, label: 'Collection', align: 'text-right' },
               ].map(({ field, label, align }) => (
                 <th
                   key={label}
@@ -165,17 +161,6 @@ export default function SalesTable({ data }: SalesTableProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-white">
                     {formatCurrency(record.saleValue)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <span
-                      className={
-                        record.collectionReceived >= record.saleValue
-                          ? 'text-green-400 font-medium'
-                          : 'text-amber-400'
-                      }
-                    >
-                      {formatCurrency(record.collectionReceived)}
-                    </span>
                   </td>
                 </tr>
               );

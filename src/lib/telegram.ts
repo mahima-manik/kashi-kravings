@@ -65,7 +65,6 @@ export function formatDailySummaryMessage(data: DashboardData): string {
   const todayRecords = data.salesRecords.filter((r) => r.date === todayStr);
 
   const todayRevenue = todayRecords.reduce((sum, r) => sum + r.saleValue, 0);
-  const todayCollection = todayRecords.reduce((sum, r) => sum + r.collectionReceived, 0);
   const todayUnits = todayRecords.reduce(
     (sum, r) =>
       sum +
@@ -96,7 +95,6 @@ export function formatDailySummaryMessage(data: DashboardData): string {
 <b>📊 Today's Summary</b>
 ━━━━━━━━━━━━━━━━━━
 💰 Revenue: ${formatCurrency(todayRevenue)}
-✅ Collection: ${formatCurrency(todayCollection)}
 📦 Units Sold: ${todayUnits.toLocaleString('en-IN')}
 🏪 Active Stores: ${data.storesActiveToday}/6
 
@@ -107,9 +105,6 @@ ${storesSummary || '  No sales recorded today'}
 <b>📈 Overall Stats</b>
 ━━━━━━━━━━━━━━━━━━
 Total Revenue: ${formatCurrency(data.totalRevenue)}
-Total Collection: ${formatCurrency(data.totalCollection)}
-Outstanding: ${formatCurrency(data.totalOutstanding)}
-Collection Rate: ${data.collectionRate.toFixed(1)}%
 
 <i>Generated at ${new Date().toLocaleTimeString('en-IN')}</i>
 `;

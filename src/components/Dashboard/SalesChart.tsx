@@ -43,9 +43,9 @@ export default function SalesChart({ data }: SalesChartProps) {
               axisLine={{ stroke: '#2a2a3a' }}
             />
             <Tooltip
-              formatter={(value: number, name: string) => [
+              formatter={(value: number) => [
                 `₹${value.toLocaleString('en-IN')}`,
-                name === 'totalRevenue' ? 'Revenue' : 'Collection',
+                'Revenue',
               ]}
               labelFormatter={(label) => `Date: ${label}`}
               contentStyle={{
@@ -57,9 +57,7 @@ export default function SalesChart({ data }: SalesChartProps) {
               labelStyle={{ color: '#9ca3af' }}
             />
             <Legend
-              formatter={(value) =>
-                value === 'totalRevenue' ? 'Revenue' : 'Collection'
-              }
+              formatter={() => 'Revenue'}
               wrapperStyle={{ color: '#9ca3af' }}
             />
             <Line
@@ -68,14 +66,6 @@ export default function SalesChart({ data }: SalesChartProps) {
               stroke="#A69A5B"
               strokeWidth={2}
               dot={{ fill: '#A69A5B', strokeWidth: 2 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="totalCollection"
-              stroke="#16a34a"
-              strokeWidth={2}
-              dot={{ fill: '#16a34a', strokeWidth: 2 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>
