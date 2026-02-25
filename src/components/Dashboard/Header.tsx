@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Sun, Moon } from 'lucide-react';
+import { LogOut, Sun, Moon, MessageCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 const tabs = [
   { id: 'sales', label: 'Sales', href: '/' },
   { id: 'invoices', label: 'Invoices', href: '/invoices' },
+  { id: 'chat', label: 'Chat', href: '/chat', icon: MessageCircle },
 ];
 
 export default function Header() {
@@ -19,7 +20,7 @@ export default function Header() {
 
   useEffect(() => setMounted(true), []);
 
-  const activeTab = pathname === '/invoices' ? 'invoices' : 'sales';
+  const activeTab = pathname === '/invoices' ? 'invoices' : pathname === '/chat' ? 'chat' : 'sales';
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
