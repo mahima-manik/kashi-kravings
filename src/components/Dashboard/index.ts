@@ -9,3 +9,4 @@ export { default as ProductUnitSales } from './ProductUnitSales';
 export { default as PromotionImpact } from './PromotionImpact';
 export { default as SalesPromotionTrend } from './SalesPromotionTrend';
 export { default as InvoicesView } from './InvoicesView';
+export { default as InvoiceTable } from './InvoiceTable';
