@@ -3,38 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { ApiResponse, Invoice, InvoiceData, STORE_MAP } from '@/lib/types';
+import { ApiResponse, Invoice, InvoiceData, findStoreCode } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import { InvoiceTable } from '@/components/Dashboard';
 
-// ─── Store-to-invoice matching ────────────────────────────────
-// Maps store names to possible invoice contactName patterns.
-// Uses case-insensitive "starts with" matching so e.g.
-// "Deena Chaat" matches "Deena Chaat Bhandar".
-
-const STORE_INVOICE_MAP: Record<string, string[]> = {
-  'The Ram Bhandar': ['The Ram Bhandar'],
-  'Lakshmi Chai': ['Lakshmi Chai'],
-  'Deena Chaat': ['Deena Chaat'],
-  'Shree Ji': ['Shreeji', 'Shree Ji'],
-  'Blue Lassi': ['Blue Lassi'],
-  'Siwon Lassi': ['Siwon Lassi'],
-  'Popular Baati Chokha': ['Popular Baati'],
-  'GreenBerry': ['GreenBerry', 'Greenberry', 'Green Berry'],
-};
-
-function matchesStore(contactName: string, storeName: string): boolean {
-  const patterns = STORE_INVOICE_MAP[storeName];
-  if (!patterns) return false;
-  const lower = contactName.toLowerCase();
-  return patterns.some(p => lower.startsWith(p.toLowerCase()));
-}
-
-// ─── Page ─────────────────────────────────────────────────────
-
 export default function StoreDetailPage({ params }: { params: { storeCode: string } }) {
-  const decodedCode = decodeURIComponent(params.storeCode);
-  const storeName = STORE_MAP[decodedCode] || decodedCode;
+  const storeName = decodeURIComponent(params.storeCode);
+  const storeCode = findStoreCode(storeName);
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +21,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         const res = await fetch('/api/invoices');
         const result: ApiResponse<InvoiceData> = await res.json();
         if (result.success && result.data) {
-          setInvoices(result.data.invoices.filter(inv => matchesStore(inv.contactName, storeName)));
+          setInvoices(result.data.invoices.filter(inv => inv.contactName === storeName));
         }
       } catch {
         setError('Failed to fetch invoices');
@@ -57,7 +32,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     fetchData();
   }, [storeName]);
 
-  // Summary
   const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
   const totalRemaining = invoices.reduce((s, inv) => s + inv.remainingAmount, 0);
   const paidCount = invoices.filter(inv => inv.invoiceStatus === 'Paid').length;
@@ -76,7 +50,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
               {storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
             </span>
             <img
-              src={`/stores/${decodedCode}.jpg`}
+              src={`/stores/${storeCode || encodeURIComponent(storeName)}.jpg`}
               alt={storeName}
               className="absolute inset-0 w-full h-full object-cover rounded-lg"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -84,7 +58,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{storeName}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{decodedCode}</p>
+            {storeCode && <p className="text-sm text-gray-500 dark:text-gray-400">{storeCode}</p>}
           </div>
         </div>
       </div>
@@ -105,7 +79,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         </div>
       )}
 
-      {/* Invoice table — shared component */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-12 w-12 animate-spin text-brand-gold" />
