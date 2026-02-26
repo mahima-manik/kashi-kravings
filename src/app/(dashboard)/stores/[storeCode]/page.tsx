@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { ApiResponse, Invoice, InvoiceData, findStoreCode } from '@/lib/types';
+import { ApiResponse, Invoice, InvoiceData } from '@/lib/types';
+import { findStoreCode } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
 import { InvoiceTable } from '@/components/Dashboard';
 

@@ -5,8 +5,8 @@ import {
   DailySummary,
   StoreSummary,
   ProductSummary,
-  STORE_MAP,
-} from './types';
+} from '@/lib/types';
+import { STORE_MAP } from '@/lib/stores';
 
 // Cache configuration
 let cachedData: DashboardData | null = null;

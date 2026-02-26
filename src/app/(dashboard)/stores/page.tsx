@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Loader2, IndianRupee, FileText, AlertCircle } from 'lucide-react';
-import { Invoice, InvoiceData, ApiResponse, findStoreCode } from '@/lib/types';
+import { Loader2, IndianRupee, FileText } from 'lucide-react';
+import { Invoice, InvoiceData, ApiResponse } from '@/lib/types';
+import { findStoreCode } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
 
 interface StoreCard {

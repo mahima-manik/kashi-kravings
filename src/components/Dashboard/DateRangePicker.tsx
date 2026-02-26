@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
-import { STORES } from '@/lib/types';
+import { STORES } from '@/lib/stores';
 
 export type PresetKey = '3d' | '1w' | '1m' | 'custom';
 

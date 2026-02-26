@@ -1,7 +1,7 @@
 import { streamText, type UIMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { fetchSalesData } from '@/lib/google-sheets';
-import { STORES, PRODUCTS } from '@/lib/types';
+import { STORES, PRODUCTS } from '@/lib/stores';
 import type { Invoice } from '@/lib/types';
 import fs from 'fs';
 import path from 'path';
