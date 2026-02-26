@@ -113,7 +113,7 @@ export default function ExplorePage() {
       )}
 
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Explore Stores</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Stores</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           {stores.length} stores where Kashi Kravings chocolates are sold
         </p>
@@ -128,7 +128,7 @@ export default function ExplorePage() {
           return (
             <Link
               key={store.storeCode}
-              href={`/explore/${encodeURIComponent(store.storeCode)}`}
+              href={`/stores/${encodeURIComponent(store.storeCode)}`}
               className="group bg-surface-card border border-surface-border rounded-xl p-4 hover:border-brand-gold/50 hover:shadow-md transition-all"
             >
               {/* Store image with initials fallback */}
