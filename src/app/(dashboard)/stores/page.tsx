@@ -119,9 +119,6 @@ export default function StoresPage() {
             <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-brand-gold transition-colors truncate">
               {store.name}
             </h3>
-            {store.storeCode && (
-              <p className="text-xs text-gray-400 dark:text-gray-500">{store.storeCode}</p>
-            )}
 
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-2 text-sm mt-3">
@@ -135,25 +132,22 @@ export default function StoresPage() {
               </div>
             </div>
 
-            {/* Outstanding bar */}
-            {store.totalRemaining > 0 && (
-              <div className="mt-3 pt-3 border-t border-surface-border-light">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {Math.round(((store.totalAmount - store.totalRemaining) / store.totalAmount) * 100)}% collected
-                  </span>
-                  <span className="text-red-600 dark:text-red-400 font-medium">
-                    {formatCurrency(store.totalRemaining)} due
-                  </span>
+            {/* Collection circular indicator */}
+            {(() => {
+              const pct = store.totalAmount > 0 ? Math.round(((store.totalAmount - store.totalRemaining) / store.totalAmount) * 100) : 0;
+              const r = 10;
+              const circ = 2 * Math.PI * r;
+              const offset = circ - (pct / 100) * circ;
+              return (
+                <div className="mt-3 pt-3 border-t border-surface-border-light flex items-center gap-2">
+                  <svg width="28" height="28" viewBox="0 0 28 28">
+                    <circle cx="14" cy="14" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200 dark:text-gray-700" />
+                    <circle cx="14" cy="14" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-green-500" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 14 14)" />
+                  </svg>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{pct}% collected</span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 rounded-full"
-                    style={{ width: `${Math.round(((store.totalAmount - store.totalRemaining) / store.totalAmount) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </Link>
         ))}
       </div>
