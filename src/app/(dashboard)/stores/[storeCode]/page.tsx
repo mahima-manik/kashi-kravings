@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Loader2, ArrowLeft, Users } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData } from '@/lib/types';
 import { findStoreCode, STORES } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
-import { InvoiceTable } from '@/components/Dashboard';
+import { InvoiceTable, StoreDailySalesTable } from '@/components/Dashboard';
 
 type Tab = 'sales' | 'invoices';
 
@@ -20,12 +20,6 @@ interface DailySales {
   sampleGiven: number;
   sampleConsumed: number;
   entries: number;
-}
-
-function formatDateDMY(dateStr: string): string {
-  // Convert YYYY-MM-DD to DD/MM/YYYY to match invoice date format
-  const [y, m, d] = dateStr.split('-');
-  return `${d}/${m}/${y}`;
 }
 
 function aggregateDailySales(records: SalesRecord[]): DailySales[] {
@@ -77,40 +71,61 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    setIsLoadingInvoices(true);
+    setIsLoadingSales(true);
+    setError(null);
+
     async function fetchInvoices() {
       try {
-        const res = await fetch('/api/invoices');
+        const res = await fetch('/api/invoices', { signal });
         const result: ApiResponse<InvoiceData> = await res.json();
-        if (result.success && result.data) {
+        if (!signal.aborted && result.success && result.data) {
           setInvoices(result.data.invoices.filter(inv => inv.contactName === storeName));
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return;
+        }
         setError('Failed to fetch invoices');
       } finally {
-        setIsLoadingInvoices(false);
+        if (!signal.aborted) {
+          setIsLoadingInvoices(false);
+        }
       }
     }
 
     async function fetchSales() {
       try {
-        const res = await fetch('/api/sales');
+        const res = await fetch('/api/sales', { signal });
         const result: ApiResponse<DashboardData> = await res.json();
-        if (result.success && result.data) {
+        if (!signal.aborted && result.success && result.data) {
           const filtered = result.data.salesRecords.filter(r =>
             (storeCode && r.location === storeCode) ||
             r.storeName.toLowerCase() === canonicalName.toLowerCase()
           );
           setSalesRecords(filtered);
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return;
+        }
         // Sales data is supplementary, don't block on error
       } finally {
-        setIsLoadingSales(false);
+        if (!signal.aborted) {
+          setIsLoadingSales(false);
+        }
       }
     }
 
     fetchInvoices();
     fetchSales();
+
+    return () => {
+      abortController.abort();
+    };
   }, [storeName, storeCode, canonicalName]);
 
   const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
@@ -122,8 +137,13 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
 
   const totalSalesValue = salesRecords.reduce((s, r) => s + r.saleValue, 0);
   const totalTSOs = salesRecords.reduce((s, r) => s + r.numTSO, 0);
+  const totalCollection = salesRecords.reduce((s, r) => s + r.collectionReceived, 0);
+  const totalUnits = salesRecords.reduce((s, r) => s + r.paanL + r.thandaiL + r.giloriL + r.paanS + r.thandaiS + r.giloriS + r.heritageBox9 + r.heritageBox15, 0);
+  const totalPromotionHours = salesRecords.reduce((s, r) => s + r.promotionDuration, 0);
+  const totalSamplesGiven = salesRecords.reduce((s, r) => s + r.sampleGiven, 0);
+  const totalSamplesConsumed = salesRecords.reduce((s, r) => s + r.sampleConsumed, 0);
 
-  const isLoading = isLoadingInvoices && isLoadingSales;
+  const isLoading = isLoadingInvoices || isLoadingSales;
 
   return (
     <>
@@ -204,58 +224,16 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
                 <Loader2 className="h-8 w-8 animate-spin text-brand-gold" />
               </div>
             ) : dailySales.length > 0 ? (
-              <div className="bg-surface-card border border-surface-border rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-surface-border bg-gray-50 dark:bg-white/5">
-                        <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Date</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sale Value</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Collection</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Units</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">TSOs</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Promo Hrs</th>
-                        <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Samples</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dailySales.map((day) => (
-                        <tr key={day.date} className="border-b border-surface-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 text-gray-900 dark:text-white font-medium">{formatDateDMY(day.date)}</td>
-                          <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{formatCurrency(day.saleValue)}</td>
-                          <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(day.collectionReceived)}</td>
-                          <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{day.totalUnits}</td>
-                          <td className="px-4 py-3 text-right">
-                            {day.numTSO > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400 font-medium">
-                                <Users className="h-3.5 w-3.5" />
-                                {day.numTSO}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{day.promotionDuration > 0 ? day.promotionDuration : '—'}</td>
-                          <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{day.sampleGiven > 0 ? `${day.sampleGiven} / ${day.sampleConsumed}` : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-gray-50 dark:bg-white/5 font-semibold">
-                        <td className="px-4 py-3 text-gray-900 dark:text-white">Total</td>
-                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{formatCurrency(totalSalesValue)}</td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(salesRecords.reduce((s, r) => s + r.collectionReceived, 0))}</td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{salesRecords.reduce((s, r) => s + r.paanL + r.thandaiL + r.giloriL + r.paanS + r.thandaiS + r.giloriS + r.heritageBox9 + r.heritageBox15, 0)}</td>
-                        <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">{totalTSOs}</td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{salesRecords.reduce((s, r) => s + r.promotionDuration, 0)}</td>
-                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
-                          {salesRecords.reduce((s, r) => s + r.sampleGiven, 0)} / {salesRecords.reduce((s, r) => s + r.sampleConsumed, 0)}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
+              <StoreDailySalesTable
+                dailySales={dailySales}
+                totalSalesValue={totalSalesValue}
+                totalCollection={totalCollection}
+                totalUnits={totalUnits}
+                totalTSOs={totalTSOs}
+                totalPromotionHours={totalPromotionHours}
+                totalSamplesGiven={totalSamplesGiven}
+                totalSamplesConsumed={totalSamplesConsumed}
+              />
             ) : (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400 text-sm">
                 No sales data available for this store.
