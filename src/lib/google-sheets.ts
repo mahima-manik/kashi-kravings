@@ -124,7 +124,7 @@ function parseSalesRow(row: string[], index: number): SalesRecord {
   };
 }
 
-function calculateTotalUnits(record: SalesRecord): number {
+export function calculateTotalUnits(record: SalesRecord): number {
   return (
     record.paanL +
     record.thandaiL +
@@ -137,7 +137,7 @@ function calculateTotalUnits(record: SalesRecord): number {
   );
 }
 
-function aggregateDailySummaries(records: SalesRecord[]): DailySummary[] {
+export function aggregateDailySummaries(records: SalesRecord[]): DailySummary[] {
   const dailyMap = new Map<string, DailySummary>();
 
   for (const record of records) {
@@ -175,7 +175,7 @@ function aggregateDailySummaries(records: SalesRecord[]): DailySummary[] {
   );
 }
 
-function aggregateStoreSummaries(records: SalesRecord[]): StoreSummary[] {
+export function aggregateStoreSummaries(records: SalesRecord[]): StoreSummary[] {
   const storeMap = new Map<string, StoreSummary>();
 
   for (const record of records) {
@@ -206,7 +206,7 @@ function aggregateStoreSummaries(records: SalesRecord[]): StoreSummary[] {
   );
 }
 
-function aggregateProductSummaries(records: SalesRecord[]): ProductSummary[] {
+export function aggregateProductSummaries(records: SalesRecord[]): ProductSummary[] {
   const products: ProductSummary[] = [
     { productName: 'Paan (L)', totalUnits: 0, flavor: 'Paan', size: 'L' },
     { productName: 'Thandai (L)', totalUnits: 0, flavor: 'Thandai', size: 'L' },
@@ -235,6 +235,28 @@ function aggregateProductSummaries(records: SalesRecord[]): ProductSummary[] {
 function getTodayString(): string {
   const today = new Date();
   return today.toISOString().split('T')[0];
+}
+
+export function buildDashboardData(records: SalesRecord[], lastUpdated = new Date().toISOString()): DashboardData {
+  const totalRevenue = records.reduce((sum, r) => sum + r.saleValue, 0);
+  const totalCollection = records.reduce((sum, r) => sum + r.collectionReceived, 0);
+  const totalUnits = records.reduce((sum, r) => sum + calculateTotalUnits(r), 0);
+  const today = getTodayString();
+  const uniqueStoresToday = new Set(records.filter(r => r.date === today).map(r => r.location));
+
+  return {
+    salesRecords: records,
+    totalRevenue,
+    totalCollection,
+    totalOutstanding: totalRevenue - totalCollection,
+    totalUnits,
+    storesActiveToday: uniqueStoresToday.size,
+    dailySummaries: aggregateDailySummaries(records),
+    storeSummaries: aggregateStoreSummaries(records),
+    productSummaries: aggregateProductSummaries(records),
+    collectionRate: totalRevenue > 0 ? (totalCollection / totalRevenue) * 100 : 0,
+    lastUpdated,
+  };
 }
 
 async function fetchSheetData(): Promise<string[][]> {

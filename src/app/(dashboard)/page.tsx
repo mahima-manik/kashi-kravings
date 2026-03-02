@@ -12,7 +12,7 @@ import {
   SalesPromotionTrend,
 } from '@/components/Dashboard';
 import { DashboardData, DailySummary, SalesRecord, ApiResponse } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummary[] {
   const map = new Map<string, DailySummary>();
@@ -49,7 +49,9 @@ function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummar
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
 
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 29), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -59,6 +61,25 @@ export default function DashboardPage() {
   const [appliedStartDate, setAppliedStartDate] = useState(startDate);
   const [appliedEndDate, setAppliedEndDate] = useState(endDate);
   const [appliedLocation, setAppliedLocation] = useState('all');
+
+  const handleSync = useCallback(async () => {
+    setIsSyncing(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/sales?sync=true');
+      const result: ApiResponse<DashboardData> = await response.json();
+      if (result.success && result.data) {
+        setData(result.data);
+        setLastSynced(new Date().toLocaleTimeString());
+      } else {
+        setError(result.error || 'Sync failed');
+      }
+    } catch {
+      setError('Sync failed');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
 
   const fetchData = useCallback(async (useMock = false) => {
     setIsLoading(true);
@@ -166,6 +187,22 @@ export default function DashboardPage() {
 
       {data && (
         <>
+          <div className="flex justify-end items-center gap-3 mb-4">
+            {lastSynced && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                Last synced: {lastSynced}
+              </span>
+            )}
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync from Sheets'}
+            </button>
+          </div>
+
           <div className="mb-6">
               <DateRangePicker
                 startDate={startDate}
