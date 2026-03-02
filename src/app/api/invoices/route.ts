@@ -1,34 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
+import { findStoreCode } from '@/lib/stores';
 import type { Invoice, InvoiceData, ApiResponse } from '@/lib/types';
 
-const DATA_FILE = path.join(process.cwd(), 'src/data/invoices.json');
-
-function readInvoices(): Record<string, Invoice> {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
+function isoToDDMMYYYY(iso: string | null): string {
+  if (!iso) return '';
+  const [yyyy, mm, dd] = iso.split('-');
+  return `${dd}/${mm}/${yyyy}`;
 }
 
-function writeInvoices(data: Record<string, Invoice>) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+function ddmmyyyyToISO(dateStr: string): string | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split('/');
+  if (parts.length !== 3) return null;
+  const [dd, mm, yyyy] = parts;
+  return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
 }
 
-function buildInvoiceData(invoiceMap: Record<string, Invoice>): InvoiceData {
-  const invoices = Object.values(invoiceMap).sort((a, b) => {
-    // Sort by date descending (DD/MM/YYYY format)
-    const parseDate = (d: string) => {
-      const parts = d.split('/');
-      if (parts.length === 3) return new Date(+parts[2], +parts[1] - 1, +parts[0]);
-      return new Date(0);
-    };
-    return parseDate(b.invoiceDate).getTime() - parseDate(a.invoiceDate).getTime();
-  });
-
+function buildInvoiceData(invoices: Invoice[]): InvoiceData {
   let totalAmount = 0;
   let totalRemaining = 0;
   let paidCount = 0;
@@ -46,9 +35,28 @@ function buildInvoiceData(invoiceMap: Record<string, Invoice>): InvoiceData {
 
 export async function GET(): Promise<NextResponse<ApiResponse<InvoiceData>>> {
   try {
-    const invoiceMap = readInvoices();
-    const data = buildInvoiceData(invoiceMap);
-    return NextResponse.json({ success: true, data });
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('invoice_date', { ascending: false });
+
+    if (error) throw error;
+
+    const invoices: Invoice[] = (data ?? []).map(row => ({
+      invoiceNo: row.invoice_no,
+      invoiceDate: isoToDDMMYYYY(row.invoice_date),
+      contactName: row.contact_name,
+      amount: row.amount,
+      remainingAmount: row.remaining_amount,
+      invoiceStatus: row.status,
+      dueDate: isoToDDMMYYYY(row.due_date),
+      invoiceLink: row.invoice_link ?? '',
+      paymentType: row.payment_type ?? '',
+      partyCategory: row.party_category ?? '',
+      createdBy: row.created_by ?? '',
+    }));
+
+    return NextResponse.json({ success: true, data: buildInvoiceData(invoices) });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to read invoices' },
@@ -98,7 +106,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const text = await file.text();
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Find the header row containing "Invoice No"
     let headerIndex = -1;
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].startsWith('Invoice No')) {
@@ -108,42 +115,66 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     if (headerIndex === -1) {
-      return NextResponse.json({ success: false, error: 'Could not find "Invoice No" header row in CSV' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Could not find "Invoice No" header row in CSV' },
+        { status: 400 }
+      );
     }
 
+    // Fetch stores for contact_name -> store_id mapping
+    const { data: stores, error: storesError } = await supabase
+      .from('stores')
+      .select('id, code');
+    if (storesError) throw storesError;
+
+    const storeCodeToId: Record<string, string> = Object.fromEntries(
+      (stores ?? []).map(s => [s.code, s.id])
+    );
+
     const dataLines = lines.slice(headerIndex + 1);
-    const invoiceMap = readInvoices();
-    let added = 0;
-    let updated = 0;
+    const rows: object[] = [];
+    const invoiceNos: string[] = [];
 
     for (const line of dataLines) {
       const fields = parseCSVLine(line);
       if (fields.length < 11 || !fields[0]) continue;
 
       const invoiceNo = fields[0];
-      const invoice: Invoice = {
-        invoiceNo,
-        invoiceDate: fields[1] || '',
-        contactName: fields[2] || '',
-        amount: parseFloat(fields[3]) || 0,
-        remainingAmount: parseFloat(fields[4]) || 0,
-        invoiceStatus: fields[5] || '',
-        dueDate: fields[6] || '',
-        invoiceLink: fields[7] || '',
-        paymentType: fields[8] || '',
-        partyCategory: fields[9] || '',
-        createdBy: fields[10] || '',
-      };
+      const contactName = fields[2] || '';
+      const storeCode = findStoreCode(contactName);
 
-      if (invoiceMap[invoiceNo]) {
-        updated++;
-      } else {
-        added++;
-      }
-      invoiceMap[invoiceNo] = invoice;
+      rows.push({
+        invoice_no: invoiceNo,
+        invoice_date: ddmmyyyyToISO(fields[1]),
+        contact_name: contactName,
+        store_id: storeCode ? (storeCodeToId[storeCode] ?? null) : null,
+        amount: parseFloat(fields[3]) || 0,
+        remaining_amount: parseFloat(fields[4]) || 0,
+        status: fields[5] || '',
+        due_date: ddmmyyyyToISO(fields[6]),
+        invoice_link: fields[7] || '',
+        payment_type: fields[8] || '',
+        party_category: fields[9] || '',
+        created_by: fields[10] || '',
+      });
+      invoiceNos.push(invoiceNo);
     }
 
-    writeInvoices(invoiceMap);
+    // Determine added vs updated counts
+    const { data: existing } = await supabase
+      .from('invoices')
+      .select('invoice_no')
+      .in('invoice_no', invoiceNos);
+
+    const existingSet = new Set((existing ?? []).map(r => r.invoice_no));
+    const added = invoiceNos.filter(no => !existingSet.has(no)).length;
+    const updated = invoiceNos.length - added;
+
+    const { error: upsertError } = await supabase
+      .from('invoices')
+      .upsert(rows, { onConflict: 'invoice_no' });
+
+    if (upsertError) throw upsertError;
 
     return NextResponse.json({ success: true, data: { added, updated } });
   } catch (error) {
