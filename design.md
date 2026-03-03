@@ -89,6 +89,7 @@ CREATE TABLE stores (
   code       TEXT UNIQUE NOT NULL,   -- e.g. "KK-TRM-01"
   name       TEXT NOT NULL,          -- e.g. "The Ram Bhandar"
   aliases    TEXT[],                 -- alternate invoice contact name spellings
+  address    TEXT,                   -- full text address (lat/lng to be added later for map display)
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
