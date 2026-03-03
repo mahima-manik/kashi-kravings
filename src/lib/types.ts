@@ -93,6 +93,7 @@ export interface Invoice {
   paymentType: string;
   partyCategory: string;
   createdBy: string;
+  firm: 'kashi_kravings' | 'prime_traders';
 }
 
 export interface InvoiceData {

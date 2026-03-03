@@ -6,12 +6,15 @@ import type { InvoiceData, ApiResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import InvoiceTable from './InvoiceTable';
 
+type Firm = 'kashi_kravings' | 'prime_traders';
+
 export default function InvoicesView() {
   const [data, setData] = useState<InvoiceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [uploadFirm, setUploadFirm] = useState<Firm | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -33,11 +36,13 @@ export default function InvoicesView() {
   }, [fetchInvoices]);
 
   const handleUpload = async (file: File) => {
+    if (!uploadFirm) return;
     setIsUploading(true);
     setFeedback(null);
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('firm', uploadFirm);
 
     try {
       const res = await fetch('/api/invoices', { method: 'POST', body: formData });
@@ -67,8 +72,7 @@ export default function InvoicesView() {
     if (file) handleUpload(file);
   };
 
-  const invoices = data?.invoices ?? [];
-
+  const allInvoices = data?.invoices ?? [];
   return (
     <div className="space-y-6">
       {/* Upload Modal */}
@@ -83,12 +87,16 @@ export default function InvoicesView() {
             </div>
 
             <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-surface-border-light rounded-lg p-8 text-center cursor-pointer hover:border-brand-gold/50 hover:bg-surface-card-hover transition-colors"
+              onClick={() => uploadFirm && fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                uploadFirm
+                  ? 'border-surface-border-light cursor-pointer hover:border-brand-gold/50 hover:bg-surface-card-hover'
+                  : 'border-surface-border-light/50 cursor-not-allowed opacity-50'
+              }`}
             >
               <Upload className="h-10 w-10 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
               <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">
-                {isUploading ? 'Uploading...' : 'Click to upload CSV file'}
+                {!uploadFirm ? 'Select a firm first' : isUploading ? 'Uploading...' : 'Click to upload CSV file'}
               </p>
               <p className="text-gray-400 dark:text-gray-500 text-xs">MyBillBook invoice report (.csv)</p>
               <input
@@ -96,6 +104,7 @@ export default function InvoicesView() {
                 type="file"
                 accept=".csv"
                 onChange={onFileChange}
+                disabled={!uploadFirm}
                 className="hidden"
               />
             </div>
@@ -115,14 +124,14 @@ export default function InvoicesView() {
       )}
 
       {/* Summary Cards */}
-      {invoices.length > 0 && (
+      {allInvoices.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard label="Total Invoices" value={String(invoices.length)} />
-          <SummaryCard label="Total Amount" value={formatCurrency(invoices.reduce((sum, inv) => sum + inv.amount, 0))} />
-          <SummaryCard label="Remaining" value={formatCurrency(invoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
+          <SummaryCard label="Total Invoices" value={String(allInvoices.length)} />
+          <SummaryCard label="Total Amount" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
+          <SummaryCard label="Remaining" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
           <SummaryCard
             label="Status"
-            value={`${invoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${invoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
+            value={`${allInvoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${allInvoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
           />
         </div>
       )}
@@ -134,7 +143,7 @@ export default function InvoicesView() {
         <div className="relative">
           <div className="absolute right-4 sm:right-6 top-4 z-10">
             <button
-              onClick={() => setShowUpload(true)}
+              onClick={() => { setShowUpload(true); setUploadFirm(null); setFeedback(null); }}
               className="inline-flex items-center gap-2 px-3 py-2 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm font-medium rounded-lg hover:bg-brand-gold/20 transition-colors"
             >
               <Upload className="h-4 w-4" />
@@ -142,7 +151,7 @@ export default function InvoicesView() {
             </button>
           </div>
           <InvoiceTable
-            invoices={invoices}
+            invoices={allInvoices}
             showSearch
           />
         </div>

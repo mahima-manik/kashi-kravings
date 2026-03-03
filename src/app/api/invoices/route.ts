@@ -33,12 +33,19 @@ function buildInvoiceData(invoices: Invoice[]): InvoiceData {
   return { invoices, totalAmount, totalRemaining, paidCount, unpaidCount };
 }
 
-export async function GET(): Promise<NextResponse<ApiResponse<InvoiceData>>> {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<InvoiceData>>> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('invoices')
       .select('*')
       .order('invoice_date', { ascending: false });
+
+    const firm = request.nextUrl.searchParams.get('firm');
+    if (firm === 'kashi_kravings' || firm === 'prime_traders') {
+      query = query.eq('firm', firm);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -54,6 +61,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<InvoiceData>>> {
       paymentType: row.payment_type ?? '',
       partyCategory: row.party_category ?? '',
       createdBy: row.created_by ?? '',
+      firm: row.firm,
     }));
 
     return NextResponse.json({ success: true, data: buildInvoiceData(invoices) });
@@ -94,6 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const firm = formData.get('firm') as string | null;
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
@@ -101,6 +110,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     if (!file.name.endsWith('.csv')) {
       return NextResponse.json({ success: false, error: 'Please upload a CSV file' }, { status: 400 });
+    }
+
+    if (firm !== 'kashi_kravings' && firm !== 'prime_traders') {
+      return NextResponse.json({ success: false, error: 'Please select a firm' }, { status: 400 });
     }
 
     const text = await file.text();
@@ -157,6 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         payment_type: fields[8] || '',
         party_category: fields[9] || '',
         created_by: fields[10] || '',
+        firm,
       });
       invoiceNos.push(invoiceNo);
     }
@@ -165,6 +179,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const { data: existing } = await supabase
       .from('invoices')
       .select('invoice_no')
+      .eq('firm', firm)
       .in('invoice_no', invoiceNos);
 
     const existingSet = new Set((existing ?? []).map(r => r.invoice_no));
@@ -173,7 +188,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     const { error: upsertError } = await supabase
       .from('invoices')
-      .upsert(rows, { onConflict: 'invoice_no' });
+      .upsert(rows, { onConflict: 'invoice_no,firm' });
 
     if (upsertError) throw upsertError;
 

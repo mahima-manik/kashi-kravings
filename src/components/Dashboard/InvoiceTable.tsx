@@ -5,12 +5,19 @@ import { FileText, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 import type { Invoice } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 
+type Firm = 'kashi_kravings' | 'prime_traders';
+type FirmFilter = 'all' | Firm;
 type SortField = 'date' | 'amount' | 'remaining';
 
 interface InvoiceTableProps {
   invoices: Invoice[];
   showSearch?: boolean;
 }
+
+const FIRM_LABELS: Record<Firm, string> = {
+  kashi_kravings: 'Kashi Kravings',
+  prime_traders: 'Prime Traders',
+};
 
 function parseDate(d: string) {
   const parts = d.split('/');
@@ -26,6 +33,7 @@ export default function InvoiceTable({
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [firmFilter, setFirmFilter] = useState<FirmFilter>('all');
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -41,6 +49,7 @@ export default function InvoiceTable({
       if (showSearch && searchQuery && !inv.contactName.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (statusFilter === 'paid' && inv.invoiceStatus !== 'Paid') return false;
       if (statusFilter === 'unpaid' && inv.invoiceStatus === 'Paid') return false;
+      if (firmFilter !== 'all' && inv.firm !== firmFilter) return false;
       return true;
     })
     .sort((a: Invoice, b: Invoice) => {
@@ -82,24 +91,41 @@ export default function InvoiceTable({
                 />
               </div>
             )}
-            <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
-              {([
-                { key: 'all' as const, label: 'All' },
-                { key: 'paid' as const, label: `Paid (${paidCount})` },
-                { key: 'unpaid' as const, label: `Unpaid (${unpaidCount})` },
-              ]).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setStatusFilter(key)}
-                  className={`flex-1 sm:flex-none px-3 py-2 transition-colors ${
-                    statusFilter === key
-                      ? 'bg-brand-gold/20 text-brand-gold font-medium'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
+                {([
+                  { key: 'all' as const, label: 'All' },
+                  { key: 'paid' as const, label: `Paid (${paidCount})` },
+                  { key: 'unpaid' as const, label: `Unpaid (${unpaidCount})` },
+                ]).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFilter(key)}
+                    className={`flex-1 sm:flex-none px-3 py-2 transition-colors ${
+                      statusFilter === key
+                        ? 'bg-brand-gold/20 text-brand-gold font-medium'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
+                {(['all', 'kashi_kravings', 'prime_traders'] as FirmFilter[]).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setFirmFilter(key)}
+                    className={`px-3 py-2 transition-colors ${
+                      firmFilter === key
+                        ? 'bg-brand-gold/20 text-brand-gold font-medium'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                    }`}
+                  >
+                    {key === 'all' ? 'All' : FIRM_LABELS[key]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -125,7 +151,7 @@ export default function InvoiceTable({
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filtered.map((inv) => (
-                <tr key={inv.invoiceNo} className="hover:bg-surface-card-hover transition-colors">
+                <tr key={`${inv.firm}-${inv.invoiceNo}`} className="hover:bg-surface-card-hover transition-colors">
                   <td className="hidden sm:table-cell px-4 py-3 text-gray-900 dark:text-white font-medium">{inv.invoiceNo}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.invoiceDate}</td>
                   <td className="px-4 py-3">
