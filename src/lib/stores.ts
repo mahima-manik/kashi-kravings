@@ -1,39 +1,23 @@
 // Store definitions
-// `aliases` lists alternate invoice contactName spellings that map to this store.
 export interface Store {
   code: string;
   name: string;
   aliases?: string[];
 }
 
-export const STORES: Store[] = [
-  { code: 'KK-TRM-01', name: 'The Ram Bhandar' },
-  { code: 'KK-LC-02', name: 'Lakshmi Chai' },
-  { code: 'KK-DC-06', name: 'Deena Chaat' },
-  { code: 'KK-SJ-03', name: 'Shree Ji', aliases: ['Shreeji'] },
-  { code: 'KK-BL-04', name: 'Blue Lassi' },
-  { code: 'KK-SL-05', name: 'Siwon Lassi' },
-  { code: 'KK-PBC-07', name: 'Popular Baati Chokha', aliases: ['Popular Baati'] },
-  { code: 'KK-GB-08', name: 'GreenBerry', aliases: ['Greenberry', 'Green Berry'] },
-  { code: 'KK-RB-09', name: 'Rahul Brothers' },
-];
-
-// code -> name (used by sales sheet parsing)
-export const STORE_MAP: Record<string, string> = STORES.reduce(
-  (acc, store) => ({ ...acc, [store.code]: store.name }),
-  {}
-);
-
-// contactName -> code (case-insensitive prefix match)
-// Built once from STORES, including aliases.
-const _nameLookup: { prefix: string; code: string }[] = STORES.flatMap(store => [
-  { prefix: store.name.toLowerCase(), code: store.code },
-  ...(store.aliases ?? []).map(a => ({ prefix: a.toLowerCase(), code: store.code })),
-]);
-
-export function findStoreCode(contactName: string): string | null {
+/**
+ * Match a contact name to a store code using case-insensitive prefix matching.
+ * Accepts a stores array so it can work with DB-fetched data.
+ */
+export function findStoreCode(contactName: string, stores: Store[]): string | null {
   const lower = contactName.toLowerCase();
-  return _nameLookup.find(e => lower.startsWith(e.prefix))?.code ?? null;
+  for (const store of stores) {
+    if (lower.startsWith(store.name.toLowerCase())) return store.code;
+    for (const alias of store.aliases ?? []) {
+      if (lower.startsWith(alias.toLowerCase())) return store.code;
+    }
+  }
+  return null;
 }
 
 // Product definitions

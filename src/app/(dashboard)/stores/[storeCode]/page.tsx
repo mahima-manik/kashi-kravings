@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData } from '@/lib/types';
-import { findStoreCode, STORES } from '@/lib/stores';
+import type { Store } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
 import { InvoiceTable, StoreDailySalesTable } from '@/components/Dashboard';
 
@@ -56,13 +56,21 @@ function aggregateDailySales(records: SalesRecord[]): DailySales[] {
   return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
 }
 
+function findStoreCodeLocal(contactName: string, stores: Store[]): string | null {
+  const lower = contactName.toLowerCase();
+  for (const store of stores) {
+    if (lower.startsWith(store.name.toLowerCase())) return store.code;
+    for (const alias of store.aliases ?? []) {
+      if (lower.startsWith(alias.toLowerCase())) return store.code;
+    }
+  }
+  return null;
+}
+
 export default function StoreDetailPage({ params }: { params: { storeCode: string } }) {
   const storeName = decodeURIComponent(params.storeCode);
-  const storeCode = findStoreCode(storeName);
 
-  const storeEntry = STORES.find(s => s.code === storeCode);
-  const canonicalName = storeEntry?.name ?? storeName;
-
+  const [storeList, setStoreList] = useState<Store[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('invoices');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [salesRecords, setSalesRecords] = useState<SalesRecord[]>([]);
@@ -70,7 +78,24 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const storeCode = useMemo(() => findStoreCodeLocal(storeName, storeList), [storeName, storeList]);
+  const canonicalName = useMemo(() => {
+    const entry = storeList.find(s => s.code === storeCode);
+    return entry?.name ?? storeName;
+  }, [storeList, storeCode, storeName]);
+
   useEffect(() => {
+    fetch('/api/stores')
+      .then(res => res.json())
+      .then((result: ApiResponse<Store[]>) => {
+        if (result.success && result.data) setStoreList(result.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (storeList.length === 0) return;
+
     const abortController = new AbortController();
     const { signal } = abortController;
 
@@ -126,7 +151,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     return () => {
       abortController.abort();
     };
-  }, [storeName, storeCode, canonicalName]);
+  }, [storeName, storeCode, canonicalName, storeList]);
 
   const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
   const totalRemaining = invoices.reduce((s, inv) => s + inv.remainingAmount, 0);

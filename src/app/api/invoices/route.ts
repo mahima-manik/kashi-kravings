@@ -60,7 +60,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<InvoiceData>>> {
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to read invoices' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -117,18 +117,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     if (headerIndex === -1) {
       return NextResponse.json(
         { success: false, error: 'Could not find "Invoice No" header row in CSV' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Fetch stores for contact_name -> store_id mapping
-    const { data: stores, error: storesError } = await supabase
+    const { data: storeRows, error: storesError } = await supabase
       .from('stores')
-      .select('id, code');
+      .select('id, code, name, aliases');
     if (storesError) throw storesError;
 
+    const stores = storeRows ?? [];
     const storeCodeToId: Record<string, string> = Object.fromEntries(
-      (stores ?? []).map(s => [s.code, s.id])
+      stores.map(s => [s.code, s.id])
     );
 
     const dataLines = lines.slice(headerIndex + 1);
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
       const invoiceNo = fields[0];
       const contactName = fields[2] || '';
-      const storeCode = findStoreCode(contactName);
+      const storeCode = findStoreCode(contactName, stores);
 
       rows.push({
         invoice_no: invoiceNo,
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Failed to process CSV' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

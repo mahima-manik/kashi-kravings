@@ -6,7 +6,7 @@ import {
   StoreSummary,
   ProductSummary,
 } from '@/lib/types';
-import { STORE_MAP } from '@/lib/stores';
+import { supabase } from '@/lib/supabase';
 
 // Cache configuration
 let cachedData: DashboardData | null = null;
@@ -97,9 +97,9 @@ function parseDate(dateValue: string | undefined | null): string {
   return '';
 }
 
-function parseSalesRow(row: string[], index: number): SalesRecord {
+function parseSalesRow(row: string[], index: number, storeCodeToName: Record<string, string>): SalesRecord {
   const location = String(row[2] || '').replace(/"/g, '').trim();
-  const storeName = STORE_MAP[location] || location;
+  const storeName = storeCodeToName[location] || location;
 
   return {
     id: `row-${index}`,
@@ -282,6 +282,12 @@ async function fetchSheetData(): Promise<string[][]> {
   return rows.slice(1).map((row) => row.map(String));
 }
 
+async function fetchStoreCodeToName(): Promise<Record<string, string>> {
+  const { data, error } = await supabase.from('stores').select('code, name');
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).map(s => [s.code, s.name]));
+}
+
 export async function fetchSalesData(
   forceRefresh = false
 ): Promise<DashboardData> {
@@ -290,10 +296,10 @@ export async function fetchSalesData(
     return cachedData;
   }
 
-  const rows = await fetchSheetData();
+  const [rows, storeCodeToName] = await Promise.all([fetchSheetData(), fetchStoreCodeToName()]);
 
   const salesRecords = rows
-    .map((row, index) => parseSalesRow(row, index + 2))
+    .map((row, index) => parseSalesRow(row, index + 2, storeCodeToName))
     .filter((record) => record.date && record.location);
 
   // Calculate aggregations
@@ -373,7 +379,17 @@ export async function fetchSalesDataForDateRange(
 
 // Generate mock data for development/testing
 export function generateMockData(): DashboardData {
-  const stores = Object.entries(STORE_MAP);
+  const stores: [string, string][] = [
+    ['KK-TRM-01', 'The Ram Bhandar'],
+    ['KK-LC-02', 'Lakshmi Chai'],
+    ['KK-DC-06', 'Deena Chaat'],
+    ['KK-SJ-03', 'Shree Ji'],
+    ['KK-BL-04', 'Blue Lassi'],
+    ['KK-SL-05', 'Siwon Lassi'],
+    ['KK-PBC-07', 'Popular Baati Chokha'],
+    ['KK-GB-08', 'GreenBerry'],
+    ['KK-RB-09', 'Rahul Brothers'],
+  ];
   const mockRecords: SalesRecord[] = [];
   const today = new Date();
 

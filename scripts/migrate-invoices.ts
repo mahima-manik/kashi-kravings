@@ -28,22 +28,23 @@ async function migrate() {
   console.log(`Found ${invoices.length} invoices to migrate.`);
 
   // Fetch stores to build code -> id map
-  const { data: stores, error: storesError } = await supabase
+  const { data: storeRows, error: storesError } = await supabase
     .from('stores')
-    .select('id, code');
+    .select('id, code, name, aliases');
 
   if (storesError) {
     console.error('Failed to fetch stores:', storesError.message);
     process.exit(1);
   }
 
+  const stores = storeRows ?? [];
   const storeCodeToId: Record<string, string> = Object.fromEntries(
-    (stores ?? []).map(s => [s.code, s.id])
+    stores.map(s => [s.code, s.id])
   );
 
   // Build DB rows
   const rows = invoices.map(inv => {
-    const storeCode = findStoreCode(String(inv.contactName ?? ''));
+    const storeCode = findStoreCode(String(inv.contactName ?? ''), stores);
     return {
       invoice_no: String(inv.invoiceNo),
       invoice_date: ddmmyyyyToISO(String(inv.invoiceDate ?? '')),

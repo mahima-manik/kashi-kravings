@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
-import { STORES } from '@/lib/stores';
 
 export type PresetKey = '3d' | '1w' | '1m' | 'custom';
 
@@ -12,6 +11,7 @@ interface DateRangePickerProps {
   endDate: string;
   location: string;
   activePreset: PresetKey;
+  stores: { code: string; name: string }[];
   onStartDateChange: (date: string) => void;
   onEndDateChange: (date: string) => void;
   onLocationChange: (location: string) => void;
@@ -55,6 +55,7 @@ export default function DateRangePicker({
   endDate,
   location,
   activePreset,
+  stores,
   onStartDateChange,
   onEndDateChange,
   onLocationChange,
@@ -119,7 +120,7 @@ export default function DateRangePicker({
             className={`${inputClass} min-w-[160px]`}
           >
             <option value="all">All Locations</option>
-            {STORES.map((store) => (
+            {stores.map((store) => (
               <option key={store.code} value={store.code}>
                 {store.name}
               </option>

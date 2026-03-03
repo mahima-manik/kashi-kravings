@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Loader2, IndianRupee, FileText, ArrowUpDown, Filter } from 'lucide-react';
 import { Invoice, InvoiceData, ApiResponse } from '@/lib/types';
-import { findStoreCode } from '@/lib/stores';
+import type { Store } from '@/lib/stores';
 
 type SortOption = 'amount-desc' | 'amount-asc' | 'due-desc' | 'name-asc' | 'collected-asc';
 type FilterOption = 'all' | 'has-dues' | 'fully-paid';
@@ -19,7 +19,18 @@ interface StoreCard {
   unpaidCount: number;
 }
 
-function groupByStore(invoices: Invoice[]): StoreCard[] {
+function findStoreCodeLocal(contactName: string, stores: Store[]): string | null {
+  const lower = contactName.toLowerCase();
+  for (const store of stores) {
+    if (lower.startsWith(store.name.toLowerCase())) return store.code;
+    for (const alias of store.aliases ?? []) {
+      if (lower.startsWith(alias.toLowerCase())) return store.code;
+    }
+  }
+  return null;
+}
+
+function groupByStore(invoices: Invoice[], stores: Store[]): StoreCard[] {
   const map = new Map<string, StoreCard>();
 
   for (const inv of invoices) {
@@ -36,7 +47,7 @@ function groupByStore(invoices: Invoice[]): StoreCard[] {
     } else {
       map.set(name, {
         name,
-        storeCode: findStoreCode(name),
+        storeCode: findStoreCodeLocal(name, stores),
         invoiceCount: 1,
         totalAmount: inv.amount,
         totalRemaining: inv.remainingAmount,
@@ -50,14 +61,14 @@ function groupByStore(invoices: Invoice[]): StoreCard[] {
 }
 
 export default function StoresPage() {
-  const [stores, setStores] = useState<StoreCard[]>([]);
+  const [storeCards, setStoreCards] = useState<StoreCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('amount-desc');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
 
   const filteredStores = useMemo(() => {
-    let result = stores;
+    let result = storeCards;
 
     if (filterBy === 'has-dues') {
       result = result.filter(s => s.totalRemaining > 0);
@@ -79,15 +90,22 @@ export default function StoresPage() {
         default: return 0;
       }
     });
-  }, [stores, sortBy, filterBy]);
+  }, [storeCards, sortBy, filterBy]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch('/api/invoices');
-        const result: ApiResponse<InvoiceData> = await res.json();
-        if (result.success && result.data) {
-          setStores(groupByStore(result.data.invoices));
+        const [invoicesRes, storesRes] = await Promise.all([
+          fetch('/api/invoices'),
+          fetch('/api/stores'),
+        ]);
+        const invoicesResult: ApiResponse<InvoiceData> = await invoicesRes.json();
+        const storesResult: ApiResponse<Store[]> = await storesRes.json();
+
+        const stores = storesResult.success && storesResult.data ? storesResult.data : [];
+
+        if (invoicesResult.success && invoicesResult.data) {
+          setStoreCards(groupByStore(invoicesResult.data.invoices, stores));
         }
       } catch {
         setError('Failed to fetch data');
@@ -121,7 +139,7 @@ export default function StoresPage() {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Stores</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {filteredStores.length}{filterBy !== 'all' ? ` of ${stores.length}` : ''} stores
+            {filteredStores.length}{filterBy !== 'all' ? ` of ${storeCards.length}` : ''} stores
           </p>
         </div>
 

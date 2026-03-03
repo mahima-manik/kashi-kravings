@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fetchSalesData, buildDashboardData } from '@/lib/google-sheets';
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, DashboardData, SalesRecord } from '@/lib/types';
-import { STORE_MAP } from '@/lib/stores';
 import { generateMockData } from '@/lib/google-sheets';
 
 export const dynamic = 'force-dynamic';
 
-function dbRowToSalesRecord(row: Record<string, unknown>, index: number): SalesRecord {
+function dbRowToSalesRecord(row: Record<string, unknown>, storeCodeToName: Record<string, string>): SalesRecord {
+  const code = String(row.store_code ?? '');
   return {
     id: String(row.id),
     timestamp: String(row.recorded_at ?? ''),
     date: String(row.date ?? ''),
-    location: String(row.store_code ?? ''),
-    storeName: STORE_MAP[String(row.store_code ?? '')] || String(row.store_code ?? ''),
+    location: code,
+    storeName: storeCodeToName[code] || code,
     paanL: Number(row.paan_l) || 0,
     thandaiL: Number(row.thandai_l) || 0,
     giloriL: Number(row.gilori_l) || 0,
@@ -32,6 +32,14 @@ function dbRowToSalesRecord(row: Record<string, unknown>, index: number): SalesR
 }
 
 async function readFromDb(startDate?: string, endDate?: string): Promise<DashboardData> {
+  // Fetch stores once for code → name mapping
+  const { data: stores, error: storesError } = await supabase.from('stores').select('code, name');
+  if (storesError) throw storesError;
+
+  const storeCodeToName: Record<string, string> = Object.fromEntries(
+    (stores ?? []).map(s => [s.code, s.name])
+  );
+
   let query = supabase.from('sales_records').select('*').order('date', { ascending: false });
 
   if (startDate) query = query.gte('date', startDate);
@@ -40,7 +48,7 @@ async function readFromDb(startDate?: string, endDate?: string): Promise<Dashboa
   const { data, error } = await query;
   if (error) throw error;
 
-  const records = (data ?? []).map((row, i) => dbRowToSalesRecord(row, i));
+  const records = (data ?? []).map(row => dbRowToSalesRecord(row, storeCodeToName));
   return buildDashboardData(records);
 }
 

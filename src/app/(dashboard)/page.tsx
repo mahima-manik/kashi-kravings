@@ -12,6 +12,7 @@ import {
   SalesPromotionTrend,
 } from '@/components/Dashboard';
 import { DashboardData, DailySummary, SalesRecord, ApiResponse } from '@/lib/types';
+import type { Store } from '@/lib/stores';
 import { Loader2, RefreshCw } from 'lucide-react';
 
 function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummary[] {
@@ -48,6 +49,7 @@ function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummar
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +126,15 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   }, [appliedStartDate, appliedEndDate]);
+
+  useEffect(() => {
+    fetch('/api/stores')
+      .then(res => res.json())
+      .then((result: ApiResponse<Store[]>) => {
+        if (result.success && result.data) setStores(result.data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -209,6 +220,7 @@ export default function DashboardPage() {
                 endDate={endDate}
                 location={location}
                 activePreset={activePreset}
+                stores={stores}
                 onStartDateChange={setStartDate}
                 onEndDateChange={setEndDate}
                 onLocationChange={(loc) => { setLocation(loc); setAppliedLocation(loc); }}
