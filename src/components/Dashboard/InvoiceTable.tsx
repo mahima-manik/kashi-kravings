@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { FileText, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
-import type { Invoice } from '@/lib/types';
+import { FIRMS, FIRM_KEYS } from '@/lib/types';
+import type { Invoice, Firm } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 
-type Firm = 'kashi_kravings' | 'prime_traders';
 type FirmFilter = 'all' | Firm;
 type SortField = 'date' | 'amount' | 'remaining';
 
@@ -13,11 +13,6 @@ interface InvoiceTableProps {
   invoices: Invoice[];
   showSearch?: boolean;
 }
-
-const FIRM_LABELS: Record<Firm, string> = {
-  kashi_kravings: 'Kashi Kravings',
-  prime_traders: 'Prime Traders',
-};
 
 function parseDate(d: string) {
   const parts = d.split('/');
@@ -112,7 +107,7 @@ export default function InvoiceTable({
                 ))}
               </div>
               <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
-                {(['all', 'kashi_kravings', 'prime_traders'] as FirmFilter[]).map((key) => (
+                {(['all' as const, ...FIRM_KEYS]).map((key) => (
                   <button
                     key={key}
                     onClick={() => setFirmFilter(key)}
@@ -122,7 +117,7 @@ export default function InvoiceTable({
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
                     }`}
                   >
-                    {key === 'all' ? 'All' : FIRM_LABELS[key]}
+                    {key === 'all' ? 'All' : FIRMS[key]}
                   </button>
                 ))}
               </div>

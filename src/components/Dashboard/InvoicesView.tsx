@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Upload, CheckCircle, AlertCircle, X } from 'lucide-react';
-import type { InvoiceData, ApiResponse } from '@/lib/types';
+import { FIRMS, FIRM_KEYS } from '@/lib/types';
+import type { Firm, InvoiceData, ApiResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import InvoiceTable from './InvoiceTable';
-
-type Firm = 'kashi_kravings' | 'prime_traders';
 
 export default function InvoicesView() {
   const [data, setData] = useState<InvoiceData | null>(null);
@@ -84,6 +83,26 @@ export default function InvoicesView() {
               <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                 <X className="h-5 w-5" />
               </button>
+            </div>
+
+            {/* Firm selector */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Select firm</p>
+              <div className="flex gap-2">
+                {FIRM_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => setUploadFirm(key)}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                      uploadFirm === key
+                        ? 'bg-brand-gold/20 border-brand-gold/50 text-brand-gold'
+                        : 'border-surface-border-light text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                    }`}
+                  >
+                    {FIRMS[key]}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div

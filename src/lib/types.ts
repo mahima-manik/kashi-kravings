@@ -80,6 +80,19 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+// Firm definitions — single source of truth
+export const FIRMS = {
+  kashi_kravings: 'Kashi Kravings',
+  prime_traders: 'Prime Traders',
+} as const;
+
+export type Firm = keyof typeof FIRMS;
+export const FIRM_KEYS = Object.keys(FIRMS) as Firm[];
+
+export function isValidFirm(value: unknown): value is Firm {
+  return typeof value === 'string' && value in FIRMS;
+}
+
 // Invoice types (from MyBillBook CSV export)
 export interface Invoice {
   invoiceNo: string;
@@ -93,7 +106,7 @@ export interface Invoice {
   paymentType: string;
   partyCategory: string;
   createdBy: string;
-  firm: 'kashi_kravings' | 'prime_traders';
+  firm: Firm;
 }
 
 export interface InvoiceData {

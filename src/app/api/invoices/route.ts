@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { findStoreCode } from '@/lib/stores';
+import { isValidFirm } from '@/lib/types';
 import type { Invoice, InvoiceData, ApiResponse } from '@/lib/types';
 
 function isoToDDMMYYYY(iso: string | null): string {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       .order('invoice_date', { ascending: false });
 
     const firm = request.nextUrl.searchParams.get('firm');
-    if (firm === 'kashi_kravings' || firm === 'prime_traders') {
+    if (isValidFirm(firm)) {
       query = query.eq('firm', firm);
     }
 
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       return NextResponse.json({ success: false, error: 'Please upload a CSV file' }, { status: 400 });
     }
 
-    if (firm !== 'kashi_kravings' && firm !== 'prime_traders') {
+    if (!isValidFirm(firm)) {
       return NextResponse.json({ success: false, error: 'Please select a firm' }, { status: 400 });
     }
 
