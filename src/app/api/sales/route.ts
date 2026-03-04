@@ -3,6 +3,7 @@ import { fetchSalesData, buildDashboardData } from '@/lib/google-sheets';
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, DashboardData, SalesRecord } from '@/lib/types';
 import { generateMockData } from '@/lib/google-sheets';
+import { verifySessionCookie } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,6 +98,74 @@ async function syncFromSheets(): Promise<DashboardData> {
   }
 
   return sheetData;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify auth
+    const authCookie = request.cookies.get('kk-auth');
+    if (!authCookie?.value) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const session = await verifySessionCookie(authCookie.value);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { store_code, date } = body;
+
+    if (!store_code || !date) {
+      return NextResponse.json(
+        { success: false, error: 'store_code and date are required' },
+        { status: 400 }
+      );
+    }
+
+    // Look up store_id from store_code
+    const { data: store } = await supabase
+      .from('stores')
+      .select('id')
+      .eq('code', store_code)
+      .single();
+
+    const row = {
+      recorded_at: new Date().toISOString(),
+      date,
+      store_code,
+      store_id: store?.id ?? null,
+      paan_l: Number(body.paan_l) || 0,
+      thandai_l: Number(body.thandai_l) || 0,
+      gilori_l: Number(body.gilori_l) || 0,
+      paan_s: Number(body.paan_s) || 0,
+      thandai_s: Number(body.thandai_s) || 0,
+      gilori_s: Number(body.gilori_s) || 0,
+      heritage_box_9: Number(body.heritage_box_9) || 0,
+      heritage_box_15: Number(body.heritage_box_15) || 0,
+      sale_value: Number(body.sale_value) || 0,
+      collection_received: Number(body.collection_received) || 0,
+      sample_given: Number(body.sample_given) || 0,
+      num_tso: Number(body.num_tso) || 0,
+      promotion_duration: Number(body.promotion_duration) || 0,
+      sample_consumed: Number(body.sample_consumed) || 0,
+    };
+
+    const { data, error } = await supabase
+      .from('sales_records')
+      .insert(row)
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, data: { id: data.id } });
+  } catch (error) {
+    console.error('Error inserting sales record:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to insert sales record' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(request: NextRequest) {
