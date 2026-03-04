@@ -27,7 +27,8 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push('/');
+        const dest = data.role === 'sales_rep' ? '/sales-entry' : '/';
+        router.push(dest);
         router.refresh();
       } else {
         setError('Invalid email or password');

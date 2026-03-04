@@ -1,25 +1,45 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifySessionCookie } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const authCookie = request.cookies.get('kk-auth');
-  const isLoginPage = request.nextUrl.pathname === '/login';
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+  const { pathname } = request.nextUrl;
+  const isLoginPage = pathname === '/login';
+  const isApiRoute = pathname.startsWith('/api/');
+  const isSalesEntry = pathname.startsWith('/sales-entry');
 
-  // Allow API routes (login needs to work)
+  // Allow API routes through (login, stores, sales endpoints need to work)
   if (isApiRoute) {
     return NextResponse.next();
   }
 
-  // If authenticated, allow access (redirect away from login if already logged in)
-  if (authCookie?.value === 'authenticated') {
-    if (isLoginPage) {
-      return NextResponse.redirect(new URL('/', request.url));
+  // Try to decode session from signed cookie
+  let role: 'admin' | 'sales_rep' | null = null;
+  if (authCookie?.value) {
+    const session = await verifySessionCookie(authCookie.value);
+    if (session) {
+      role = session.role;
     }
+  }
+
+  // Authenticated user on login page → redirect based on role
+  if (role && isLoginPage) {
+    const dest = role === 'sales_rep' ? '/sales-entry' : '/';
+    return NextResponse.redirect(new URL(dest, request.url));
+  }
+
+  // Authenticated
+  if (role) {
+    // Sales reps can only access /sales-entry
+    if (role === 'sales_rep' && !isSalesEntry) {
+      return NextResponse.redirect(new URL('/sales-entry', request.url));
+    }
+    // Admins can access everything
     return NextResponse.next();
   }
 
-  // If not authenticated and not on login page, redirect to login
+  // Not authenticated → redirect to login (unless already there)
   if (!isLoginPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }

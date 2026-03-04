@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import { verifyPassword, createSessionCookie } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -6,14 +8,22 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@kashikravings.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'kashi123';
+    // Authenticate against users table
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, password_hash, role')
+      .eq('email', email)
+      .single();
 
-    if (email === adminEmail && password === adminPassword) {
-      const response = NextResponse.json({ success: true });
+    const authenticated = !error && user && await verifyPassword(password, user.password_hash);
 
-      // Set a simple auth cookie (expires in 24 hours)
-      response.cookies.set('kk-auth', 'authenticated', {
+    if (authenticated) {
+      const role = user.role as 'admin' | 'sales_rep';
+      const userId = user.id;
+      const cookie = await createSessionCookie({ role, email, userId });
+      const response = NextResponse.json({ success: true, role });
+
+      response.cookies.set('kk-auth', cookie, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
