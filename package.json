@@ -9,13 +9,15 @@
     "lint": "next lint",
     "db:seed-stores": "tsx scripts/seed-stores.ts",
     "db:migrate-invoices": "tsx scripts/migrate-invoices.ts",
-    "db:backfill-sales": "tsx scripts/backfill-sales.ts"
+    "db:backfill-sales": "tsx scripts/backfill-sales.ts",
+    "db:seed-users": "tsx scripts/seed-users.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",
     "@ai-sdk/react": "^3.0.101",
     "@supabase/supabase-js": "^2.98.0",
     "ai": "^6.0.99",
+    "bcryptjs": "^3.0.3",
     "date-fns": "^3.6.0",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.424.0",
