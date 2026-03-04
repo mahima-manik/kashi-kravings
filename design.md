@@ -10,36 +10,44 @@ Internal business dashboard for Kashi Kravings, a paan/thandai/gilori brand sold
 
 ## Authentication
 
-Simple cookie-based auth. No external provider.
+Role-based cookie auth with two roles: `admin` and `sales_rep`. No external auth provider.
 
 - Login page: `/login`
-- Credentials stored in `.env.local` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`)
-- On success: sets `kk-auth=authenticated` cookie
-- Middleware (`src/middleware.ts`) protects all routes except `/login` and `/api/*`
+- **All users** are authenticated against the `users` table using bcrypt password hashing (`bcryptjs`)
+- On success: sets `kk-auth` cookie containing a signed session payload (`base64(json).base64(hmac)`) using HMAC-SHA256 with `AUTH_SECRET`
+- Session payload: `{ role, email, userId, exp }` — no DB lookup needed in middleware
+- Middleware (`src/middleware.ts`) decodes the signed cookie and enforces role-based routing:
+  - **Admins** → full access to all routes
+  - **Sales reps** → restricted to `/sales-entry` only, redirected there from all other routes
+  - **Unauthenticated** → redirected to `/login`
 
 ---
 
 ## Pages & Routes
 
-| Route | Description |
-|---|---|
-| `/` | Main dashboard — summary cards, charts, date range filter |
-| `/invoices` | Invoice table — CSV upload, search, filter by status |
-| `/stores` | All stores — grouped by invoice contact, shows dues |
-| `/stores/[storeCode]` | Store detail — invoices tab + daily sales tab |
-| `/chat` | AI chat over sales + invoice data |
+| Route | Description | Access |
+|---|---|---|
+| `/` | Main dashboard — summary cards, charts, date range filter | Admin |
+| `/invoices` | Invoice table — CSV upload, search, filter by status | Admin |
+| `/stores` | All stores — grouped by invoice contact, shows dues | Admin |
+| `/stores/[storeCode]` | Store detail — invoices tab + daily sales tab | Admin |
+| `/chat` | AI chat over sales + invoice data | Admin |
+| `/sales-entry` | Daily sales submission form for field reps | Admin, Sales Rep |
 
 ---
 
 ## Data Sources
 
-### 1. Sales — Google Forms → Google Sheets → Supabase
+### 1. Sales — In-App Entry + Google Sheets (fallback)
 
-TSOs submit daily sales via a Google Form. Responses land in a Google Sheet ("Form Responses 1").
+Sales reps log in to the app and submit daily sales via `/sales-entry`. Data is inserted directly into `sales_records`.
+
+Google Sheets sync remains as an admin fallback ("Sync from Sheets" button on dashboard).
 
 **Flow:**
+- **Primary:** Sales rep submits form → `POST /api/sales` → inserts into `sales_records`
+- **Fallback:** Admin clicks "Sync from Sheets" → fetches all rows from Google Sheets → upserts into `sales_records`
 - Dashboard loads → reads `sales_records` table from Supabase
-- "Sync from Sheets" button → fetches all rows from Google Sheets → upserts into `sales_records` → returns fresh data
 - Normal date-range changes → read from DB only (no Sheets call)
 
 **Google Sheet columns (0-indexed):**
@@ -129,6 +137,18 @@ CREATE TABLE invoices (
 );
 ```
 
+### `users`
+```sql
+CREATE TABLE users (
+  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name          TEXT NOT NULL,
+  email         TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,              -- bcrypt hash
+  role          TEXT NOT NULL CHECK (role IN ('admin', 'sales_rep')),
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+```
+
 ### `sales_records`
 ```sql
 CREATE TABLE sales_records (
@@ -173,10 +193,11 @@ CREATE INDEX ON sales_records(store_id);
 | GET | `/api/sales` | Read sales from DB, filtered by `startDate`/`endDate` |
 | GET | `/api/sales?sync=true` | Fetch from Google Sheets → upsert DB → return fresh data |
 | GET | `/api/sales?mock=true` | Return generated mock data (dev/fallback) |
+| POST | `/api/sales` | Submit a sales entry (auth required) → insert into `sales_records` |
 | GET | `/api/invoices` | Read all invoices from DB |
 | POST | `/api/invoices` | Upload MyBillBook CSV → upsert invoices into DB |
 | POST | `/api/chat` | AI chat using sales + invoice data as context |
-| POST | `/api/login` | Validate credentials, set auth cookie |
+| POST | `/api/login` | Validate credentials against `users` table, set signed session cookie, return `{ role }` |
 | POST | `/api/logout` | Clear auth cookie |
 | POST | `/api/notify` | Send Telegram message |
 | GET | `/api/cron/daily-summary` | Vercel Cron — send daily Telegram summary at 9 PM IST |
@@ -191,8 +212,11 @@ CREATE INDEX ON sales_records(store_id);
 | `src/lib/stores.ts` | Store definitions, aliases, `findStoreCode()` helper |
 | `src/lib/supabase.ts` | Shared Supabase client (server-side, uses secret key) |
 | `src/lib/google-sheets.ts` | Sheets fetching, row parsing, aggregation helpers, `buildDashboardData()` |
-| `src/middleware.ts` | Cookie-based auth protection |
-| `src/app/api/sales/route.ts` | Sales API — DB reads + Sheets sync |
+| `src/lib/auth.ts` | Password hashing (bcrypt) + HMAC signed session cookies |
+| `src/middleware.ts` | Role-based auth protection (signed cookie verification) |
+| `src/app/api/sales/route.ts` | Sales API — DB reads + Sheets sync + POST for in-app entry |
+| `src/app/sales-entry/page.tsx` | Sales entry form for field reps |
+| `src/app/sales-entry/layout.tsx` | Minimal layout for sales entry (brand header + logout) |
 | `src/app/api/invoices/route.ts` | Invoices API — DB reads + CSV upsert |
 
 ---
@@ -206,6 +230,7 @@ Run with `npx tsx scripts/<file>.ts` or via npm scripts.
 | `scripts/seed-stores.ts` | `npm run db:seed-stores` | Insert 9 stores into DB |
 | `scripts/migrate-invoices.ts` | `npm run db:migrate-invoices` | Migrate `invoices.json` → DB |
 | `scripts/backfill-sales.ts` | `npm run db:backfill-sales` | Backfill all Google Sheets data → DB |
+| `scripts/seed-users.ts` | `npm run db:seed-users` | Seed admin + sales rep users into DB |
 
 ---
 
@@ -218,10 +243,7 @@ GOOGLE_SHEETS_CLIENT_EMAIL=
 GOOGLE_SHEET_ID=
 
 # Auth
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=
-ADMIN_EMAIL=
-ADMIN_PASSWORD=
+AUTH_SECRET=                   # random string for HMAC cookie signing
 
 # Supabase
 SUPABASE_URL=
