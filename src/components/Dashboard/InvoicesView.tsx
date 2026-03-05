@@ -6,6 +6,9 @@ import { FIRMS, FIRM_KEYS } from '@/lib/types';
 import type { Firm, InvoiceData, ApiResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import InvoiceTable from './InvoiceTable';
+import AgingReport from './AgingReport';
+
+type Tab = 'invoices' | 'aging';
 
 export default function InvoicesView() {
   const [data, setData] = useState<InvoiceData | null>(null);
@@ -14,6 +17,7 @@ export default function InvoicesView() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadFirm, setUploadFirm] = useState<Firm | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('invoices');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchInvoices = useCallback(async () => {
@@ -142,38 +146,66 @@ export default function InvoicesView() {
         </div>
       )}
 
-      {/* Summary Cards */}
-      {allInvoices.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard label="Total Invoices" value={String(allInvoices.length)} />
-          <SummaryCard label="Total Amount" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
-          <SummaryCard label="Remaining" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
-          <SummaryCard
-            label="Status"
-            value={`${allInvoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${allInvoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
-          />
-        </div>
-      )}
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-surface-border">
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            activeTab === 'invoices'
+              ? 'border-brand-gold text-brand-gold'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          Invoices
+        </button>
+        <button
+          onClick={() => setActiveTab('aging')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            activeTab === 'aging'
+              ? 'border-brand-gold text-brand-gold'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          Aging Report
+        </button>
+      </div>
 
-      {/* Upload button + Invoice Table */}
       {isLoading ? (
         <div className="bg-surface-card rounded-xl border border-surface-border p-8 text-center text-gray-500 dark:text-gray-400">Loading invoices...</div>
+      ) : activeTab === 'aging' ? (
+        <AgingReport invoices={allInvoices} />
       ) : (
-        <div className="relative">
-          <div className="absolute right-4 sm:right-6 top-4 z-10">
-            <button
-              onClick={() => { setShowUpload(true); setUploadFirm(null); setFeedback(null); }}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm font-medium rounded-lg hover:bg-brand-gold/20 transition-colors"
-            >
-              <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Upload CSV</span>
-            </button>
+        <>
+          {/* Summary Cards */}
+          {allInvoices.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <SummaryCard label="Total Invoices" value={String(allInvoices.length)} />
+              <SummaryCard label="Total Amount" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
+              <SummaryCard label="Remaining" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
+              <SummaryCard
+                label="Status"
+                value={`${allInvoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${allInvoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
+              />
+            </div>
+          )}
+
+          {/* Upload button + Invoice Table */}
+          <div className="relative">
+            <div className="absolute right-4 sm:right-6 top-4 z-10">
+              <button
+                onClick={() => { setShowUpload(true); setUploadFirm(null); setFeedback(null); }}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm font-medium rounded-lg hover:bg-brand-gold/20 transition-colors"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Upload CSV</span>
+              </button>
+            </div>
+            <InvoiceTable
+              invoices={allInvoices}
+              showSearch
+            />
           </div>
-          <InvoiceTable
-            invoices={allInvoices}
-            showSearch
-          />
-        </div>
+        </>
       )}
     </div>
   );
