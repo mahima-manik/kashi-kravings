@@ -87,7 +87,7 @@ export default function DateRangePicker({
             onClick={() => handlePresetClick(preset)}
             className={`text-sm rounded-lg px-4 py-2 transition-colors border ${
               activePreset === preset.key && !showCustom
-                ? 'bg-brand-olive border-brand-gold text-white'
+                ? 'bg-brand-gold/20 border-brand-gold/50 text-brand-gold font-medium'
                 : 'bg-surface-card-hover border-surface-border-light text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-brand-gold/50'
             }`}
           >
@@ -100,7 +100,7 @@ export default function DateRangePicker({
           onClick={handleCustomClick}
           className={`text-sm rounded-lg px-4 py-2 transition-colors border flex items-center gap-1.5 ${
             showCustom
-              ? 'bg-brand-olive border-brand-gold text-white'
+              ? 'bg-brand-gold/20 border-brand-gold/50 text-brand-gold font-medium'
               : 'bg-surface-card-hover border-surface-border-light text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-brand-gold/50'
           }`}
         >
