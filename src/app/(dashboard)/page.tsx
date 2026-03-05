@@ -13,7 +13,7 @@ import {
 } from '@/components/Dashboard';
 import { DashboardData, DailySummary, SalesRecord, ApiResponse } from '@/lib/types';
 import type { Store } from '@/lib/stores';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 function aggregateDailySummariesFromRecords(records: SalesRecord[]): DailySummary[] {
   const map = new Map<string, DailySummary>();
@@ -179,12 +179,7 @@ export default function DashboardPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-brand-gold mx-auto" />
-          <p className="mt-4 text-gray-500 dark:text-gray-400">Loading dashboard...</p>
-        </div>
-      </div>
+      <div className="bg-surface-card rounded-xl border border-surface-border p-8 text-center text-gray-500 dark:text-gray-400">Loading dashboard...</div>
     );
   }
 
@@ -198,22 +193,10 @@ export default function DashboardPage() {
 
       {data && (
         <>
-          <div className="flex justify-end items-center gap-3 mb-4">
-            {lastSynced && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                Last synced: {lastSynced}
-              </span>
-            )}
-            <button
-              onClick={handleSync}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync from Sheets'}
-            </button>
+          <div className="mb-6">
+            <SummaryCards records={filteredRecords} />
           </div>
-
+          
           <div className="mb-6">
               <DateRangePicker
                 startDate={startDate}
@@ -230,23 +213,22 @@ export default function DashboardPage() {
               />
           </div>
 
-          <div className="mb-6">
-            <SummaryCards records={filteredRecords} />
-          </div>
+          <div className="bg-surface-card rounded-xl border border-surface-border p-6 space-y-8 relative">
+            <div className="absolute right-4 sm:right-6 top-4 z-10">
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                title={lastSynced ? `Last synced: ${lastSynced}` : 'Sync from Google Sheets'}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-sm font-medium rounded-lg hover:bg-brand-gold/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+              </button>
+            </div>
 
-          <div className="mb-6">
             <SalesByLocation records={filteredRecords} />
-          </div>
-
-          <div className="mb-6">
             <SalesPromotionTrend data={dailySummariesForTrend} />
-          </div>
-
-          <div className="mb-6">
             <ProductUnitSales records={filteredRecords} />
-          </div>
-
-          <div className="mb-6">
             <PromotionImpact records={filteredRecords} />
           </div>
         </>

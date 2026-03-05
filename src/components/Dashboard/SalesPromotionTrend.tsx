@@ -28,7 +28,7 @@ export default function SalesPromotionTrend({ data }: SalesPromotionTrendProps) 
   }));
 
   return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+    <div>
       <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
         Sales & Promotion Trend
       </h3>

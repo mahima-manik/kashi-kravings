@@ -51,7 +51,7 @@ export default function PromotionImpact({ records }: PromotionImpactProps) {
   ];
 
   return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+    <div>
       <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Promotion Impact Analysis</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

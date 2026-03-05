@@ -74,7 +74,7 @@ export default function SalesByLocation({ records }: SalesByLocationProps) {
   });
 
   return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+    <div>
       <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Sales by Location</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
