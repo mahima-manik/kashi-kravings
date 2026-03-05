@@ -38,14 +38,15 @@ export function parseDate(d: string): number {
   return 0;
 }
 
-export function getDaysOverdue(dueDate: string): number {
+export function getDaysOverdue(dueDate: string): number | null {
   const due = parseDate(dueDate);
-  if (due === 0) return 999;
+  if (due === 0) return null;
   return Math.floor((Date.now() - due) / (1000 * 60 * 60 * 24));
 }
 
 export function getBucket(dueDate: string): BucketKey {
   const daysOverdue = getDaysOverdue(dueDate);
+  if (daysOverdue === null) return 'current';
   if (daysOverdue <= 0) return 'current';
   if (daysOverdue <= 30) return '1-30';
   if (daysOverdue <= 60) return '31-60';
@@ -73,7 +74,7 @@ export function computeAgingBuckets(unpaidInvoices: Invoice[]): {
     const days = getDaysOverdue(inv.dueDate);
     buckets[bucket] += inv.remainingAmount;
     buckets.total += inv.remainingAmount;
-    if (days > oldestDaysOverdue) oldestDaysOverdue = days;
+    if (days !== null && days > oldestDaysOverdue) oldestDaysOverdue = days;
   }
 
   return { buckets, oldestDaysOverdue };

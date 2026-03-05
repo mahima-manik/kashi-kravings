@@ -210,23 +210,6 @@ export default function StoresPage() {
                 <span className="text-gray-700 dark:text-gray-300">{store.invoiceCount} invoices</span>
               </div>
             </div>
-
-            {/* Collection circular indicator */}
-            {(() => {
-              const pct = store.totalAmount > 0 ? Math.round(((store.totalAmount - store.totalRemaining) / store.totalAmount) * 100) : 0;
-              const r = 10;
-              const circ = 2 * Math.PI * r;
-              const offset = circ - (pct / 100) * circ;
-              return (
-                <div className="mt-3 pt-3 border-t border-surface-border-light flex items-center gap-2">
-                  <svg width="28" height="28" viewBox="0 0 28 28">
-                    <circle cx="14" cy="14" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-200 dark:text-gray-700" />
-                    <circle cx="14" cy="14" r={r} fill="none" stroke="currentColor" strokeWidth="3" className="text-green-500" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 14 14)" />
-                  </svg>
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{pct}% collected</span>
-                </div>
-              );
-            })()}
           </Link>
         ))}
       </div>

@@ -164,8 +164,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   // Aging report data for this store
   const agingData = useMemo(() => {
     const unpaid = getUnpaidInvoices(invoices);
-    const { buckets, oldestDaysOverdue } = computeAgingBuckets(unpaid);
-    return { buckets, oldestDaysOverdue, unpaidInvoiceCount: unpaid.length };
+    return computeAgingBuckets(unpaid);
   }, [invoices]);
 
   const totalSalesValue = salesRecords.reduce((s, r) => s + r.saleValue, 0);
@@ -223,11 +222,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
       {/* Aging Breakdown */}
       {!isLoadingInvoices && agingData.buckets.total > 0 && (
         <div className="mb-6">
-          <AgingDistribution
-            buckets={agingData.buckets}
-            oldestDaysOverdue={agingData.oldestDaysOverdue}
-            unpaidCount={agingData.unpaidInvoiceCount}
-          />
+          <AgingDistribution buckets={agingData.buckets} />
         </div>
       )}
 
