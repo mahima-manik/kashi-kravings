@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { FileText, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 import { FIRMS, FIRM_KEYS } from '@/lib/types';
 import type { Invoice, Firm } from '@/lib/types';
@@ -150,7 +151,12 @@ export default function InvoiceTable({
                   <td className="hidden sm:table-cell px-4 py-3 text-gray-900 dark:text-white font-medium">{inv.invoiceNo}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{inv.invoiceDate}</td>
                   <td className="px-4 py-3">
-                    <span className="text-gray-600 dark:text-gray-300">{inv.contactName}</span>
+                    <Link
+                      href={`/stores/${encodeURIComponent(inv.contactName)}`}
+                      className="text-gray-600 dark:text-gray-300 hover:text-brand-gold transition-colors"
+                    >
+                      {inv.contactName}
+                    </Link>
                     <span className="sm:hidden block text-xs text-gray-400 dark:text-gray-500">#{inv.invoiceNo}</span>
                   </td>
                   <td className="px-4 py-3 text-right">

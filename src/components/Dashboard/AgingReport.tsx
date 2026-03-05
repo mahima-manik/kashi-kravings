@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { ChevronUp, ChevronDown, Info, X } from 'lucide-react';
 import { FIRMS, FIRM_KEYS } from '@/lib/types';
 import type { Invoice, Firm } from '@/lib/types';
@@ -255,7 +256,14 @@ export default function AgingReport({ invoices }: AgingReportProps) {
             <tbody className="divide-y divide-surface-border">
               {storeRows.map((row) => (
                 <tr key={row.contactName} className="hover:bg-surface-card-hover transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white font-medium whitespace-nowrap">{row.contactName}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <Link
+                      href={`/stores/${encodeURIComponent(row.contactName)}`}
+                      className="text-gray-900 dark:text-white font-medium hover:text-brand-gold transition-colors"
+                    >
+                      {row.contactName}
+                    </Link>
+                  </td>
                   {BUCKET_KEYS.map((key) => (
                     <td key={key} className={`px-4 py-3 text-right tabular-nums ${row[key] > 0 ? BUCKET_COLORS[key].text : 'text-gray-300 dark:text-gray-600'}`}>
                       {row[key] > 0 ? formatCurrency(row[key]) : '—'}
