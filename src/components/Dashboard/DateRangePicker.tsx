@@ -72,7 +72,7 @@ export default function DateRangePicker({
   };
 
   const handleCustomClick = () => {
-    setShowCustom(true);
+    setShowCustom((prev) => !prev);
   };
 
   return (
