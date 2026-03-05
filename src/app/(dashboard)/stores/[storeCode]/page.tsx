@@ -6,7 +6,8 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData } from '@/lib/types';
 import type { Store } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
-import { InvoiceTable, StoreDailySalesTable } from '@/components/Dashboard';
+import { InvoiceTable, StoreDailySalesTable, AgingDistribution } from '@/components/Dashboard';
+import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
 
 type Tab = 'sales' | 'invoices';
 
@@ -160,6 +161,13 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
 
   const dailySales = useMemo(() => aggregateDailySales(salesRecords), [salesRecords]);
 
+  // Aging report data for this store
+  const agingData = useMemo(() => {
+    const unpaid = getUnpaidInvoices(invoices);
+    const { buckets, oldestDaysOverdue } = computeAgingBuckets(unpaid);
+    return { buckets, oldestDaysOverdue, unpaidInvoiceCount: unpaid.length };
+  }, [invoices]);
+
   const totalSalesValue = salesRecords.reduce((s, r) => s + r.saleValue, 0);
   const totalTSOs = salesRecords.reduce((s, r) => s + r.numTSO, 0);
   const totalCollection = salesRecords.reduce((s, r) => s + r.collectionReceived, 0);
@@ -209,6 +217,17 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           <SummaryCard label="Invoice Amount" value={invoices.length > 0 ? formatCurrency(totalAmount) : '—'} />
           <SummaryCard label="Remaining" value={invoices.length > 0 ? formatCurrency(totalRemaining) : '—'} warn={totalRemaining > 0} />
           <SummaryCard label="Status" value={invoices.length > 0 ? `${paidCount} Paid / ${unpaidCount} Unpaid` : '—'} />
+        </div>
+      )}
+
+      {/* Aging Breakdown */}
+      {!isLoadingInvoices && agingData.buckets.total > 0 && (
+        <div className="mb-6">
+          <AgingDistribution
+            buckets={agingData.buckets}
+            oldestDaysOverdue={agingData.oldestDaysOverdue}
+            unpaidCount={agingData.unpaidInvoiceCount}
+          />
         </div>
       )}
 
@@ -294,3 +313,4 @@ function SummaryCard({ label, value, warn }: { label: string; value: string; war
     </div>
   );
 }
+

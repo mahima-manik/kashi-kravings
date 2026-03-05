@@ -6,6 +6,16 @@ import { ChevronUp, ChevronDown, Info, X } from 'lucide-react';
 import { FIRMS, FIRM_KEYS } from '@/lib/types';
 import type { Invoice, Firm } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
+import {
+  BUCKET_KEYS,
+  BUCKET_LABELS,
+  BUCKET_COLORS,
+  getUnpaidInvoices,
+  computeAgingBuckets,
+  computeStoreAgingRows,
+  type BucketTotals,
+} from '@/lib/aging';
+import AgingDistribution from '@/components/Dashboard/AgingDistribution';
 
 type FirmFilter = 'all' | Firm;
 type SortField = 'total' | 'current' | '1-30' | '31-60' | '61-90' | '90+';
@@ -14,101 +24,23 @@ interface AgingReportProps {
   invoices: Invoice[];
 }
 
-interface BucketTotals {
-  current: number;
-  '1-30': number;
-  '31-60': number;
-  '61-90': number;
-  '90+': number;
-  total: number;
-}
-
-interface StoreBuckets extends BucketTotals {
-  contactName: string;
-}
-
-const BUCKET_KEYS = ['current', '1-30', '31-60', '61-90', '90+'] as const;
-
-const BUCKET_LABELS: Record<(typeof BUCKET_KEYS)[number], string> = {
-  current: 'Current',
-  '1-30': '1-30 Days',
-  '31-60': '31-60 Days',
-  '61-90': '61-90 Days',
-  '90+': '90+ Days',
-};
-
-const BUCKET_COLORS: Record<(typeof BUCKET_KEYS)[number], { bg: string; text: string; bar: string }> = {
-  current: { bg: 'bg-emerald-50 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', bar: 'bg-emerald-500' },
-  '1-30': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', bar: 'bg-yellow-500' },
-  '31-60': { bg: 'bg-orange-50 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400', bar: 'bg-orange-500' },
-  '61-90': { bg: 'bg-red-50 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', bar: 'bg-red-500' },
-  '90+': { bg: 'bg-red-100 dark:bg-red-900/50', text: 'text-red-800 dark:text-red-300', bar: 'bg-red-700' },
-};
-
-function parseDate(d: string): number {
-  const parts = d.split('/');
-  if (parts.length === 3) return new Date(+parts[2], +parts[1] - 1, +parts[0]).getTime();
-  return 0;
-}
-
-function getBucket(dueDate: string): (typeof BUCKET_KEYS)[number] {
-  const due = parseDate(dueDate);
-  if (due === 0) return '90+';
-  const now = Date.now();
-  const daysOverdue = Math.floor((now - due) / (1000 * 60 * 60 * 24));
-  if (daysOverdue <= 0) return 'current';
-  if (daysOverdue <= 30) return '1-30';
-  if (daysOverdue <= 60) return '31-60';
-  if (daysOverdue <= 90) return '61-90';
-  return '90+';
-}
-
-function emptyBuckets(): BucketTotals {
-  return { current: 0, '1-30': 0, '31-60': 0, '61-90': 0, '90+': 0, total: 0 };
-}
-
 export default function AgingReport({ invoices }: AgingReportProps) {
   const [firmFilter, setFirmFilter] = useState<FirmFilter>('all');
   const [showInfo, setShowInfo] = useState(false);
   const [sortField, setSortField] = useState<SortField>('total');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const unpaidInvoices = useMemo(
-    () => invoices.filter((inv) => inv.invoiceStatus !== 'Paid' && inv.remainingAmount > 0),
-    [invoices],
-  );
+  const unpaidInvoices = useMemo(() => getUnpaidInvoices(invoices), [invoices]);
 
   const filtered = useMemo(
     () => (firmFilter === 'all' ? unpaidInvoices : unpaidInvoices.filter((inv) => inv.firm === firmFilter)),
     [unpaidInvoices, firmFilter],
   );
 
-  // Summary totals
-  const summaryTotals = useMemo(() => {
-    const totals = emptyBuckets();
-    for (const inv of filtered) {
-      const bucket = getBucket(inv.dueDate);
-      totals[bucket] += inv.remainingAmount;
-      totals.total += inv.remainingAmount;
-    }
-    return totals;
-  }, [filtered]);
+  const { buckets: summaryTotals } = useMemo(() => computeAgingBuckets(filtered), [filtered]);
 
-  // Store-wise breakdown
   const storeRows = useMemo(() => {
-    const map = new Map<string, StoreBuckets>();
-    for (const inv of filtered) {
-      const bucket = getBucket(inv.dueDate);
-      let row = map.get(inv.contactName);
-      if (!row) {
-        row = { contactName: inv.contactName, ...emptyBuckets() };
-        map.set(inv.contactName, row);
-      }
-      row[bucket] += inv.remainingAmount;
-      row.total += inv.remainingAmount;
-    }
-    const rows = Array.from(map.values());
-
+    const rows = computeStoreAgingRows(filtered);
     const field = sortField === 'current' ? 'current' : sortField;
     const dir = sortDir === 'asc' ? 1 : -1;
     rows.sort((a, b) => ((a[field as keyof BucketTotals] ?? 0) - (b[field as keyof BucketTotals] ?? 0)) * dir);
@@ -172,39 +104,7 @@ export default function AgingReport({ invoices }: AgingReportProps) {
       </div>
 
       {/* Stacked Bar */}
-      {summaryTotals.total > 0 && (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-4">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Outstanding Distribution</p>
-          <div className="flex rounded-lg overflow-hidden h-8">
-            {BUCKET_KEYS.map((key) => {
-              const pct = (summaryTotals[key] / summaryTotals.total) * 100;
-              if (pct === 0) return null;
-              return (
-                <div
-                  key={key}
-                  className={`${BUCKET_COLORS[key].bar} flex items-center justify-center text-white text-xs font-medium transition-all`}
-                  style={{ width: `${pct}%` }}
-                  title={`${BUCKET_LABELS[key]}: ${formatCurrency(summaryTotals[key])}`}
-                >
-                  {pct >= 8 ? `${pct.toFixed(0)}%` : ''}
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-            {BUCKET_KEYS.map((key) => {
-              const pct = (summaryTotals[key] / summaryTotals.total) * 100;
-              if (pct === 0) return null;
-              return (
-                <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                  <span className={`inline-block w-2.5 h-2.5 rounded-sm ${BUCKET_COLORS[key].bar}`} />
-                  {BUCKET_LABELS[key]} ({pct.toFixed(1)}%)
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <AgingDistribution buckets={summaryTotals} />
 
       {/* Store-wise Aging Table */}
       <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
