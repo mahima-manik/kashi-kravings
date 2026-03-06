@@ -11,15 +11,15 @@ const supabase = createClient(
 // Hardcoded store definitions used only for seeding.
 // Once seeded, the DB is the single source of truth.
 const STORES = [
-  { code: 'KK-TRM-01', name: 'The Ram Bhandar', aliases: [] as string[] },
-  { code: 'KK-LC-02', name: 'Lakshmi Chai', aliases: [] as string[] },
-  { code: 'KK-DC-06', name: 'Deena Chaat', aliases: [] as string[] },
-  { code: 'KK-SJ-03', name: 'Shree Ji', aliases: ['Shreeji'] },
-  { code: 'KK-BL-04', name: 'Blue Lassi', aliases: [] as string[] },
-  { code: 'KK-SL-05', name: 'Siwon Lassi', aliases: [] as string[] },
-  { code: 'KK-PBC-07', name: 'Popular Baati Chokha', aliases: ['Popular Baati'] },
-  { code: 'KK-GB-08', name: 'GreenBerry', aliases: ['Greenberry', 'Green Berry'] },
-  { code: 'KK-RB-09', name: 'Rahul Brothers', aliases: [] as string[] },
+  { code: 'KK-TRM-01', name: 'The Ram Bhandar', aliases: [] as string[], tier: 'company_promoter' as const },
+  { code: 'KK-LC-02', name: 'Lakshmi Chai', aliases: [] as string[], tier: 'company_promoter' as const },
+  { code: 'KK-DC-06', name: 'Deena Chaat', aliases: [] as string[], tier: 'company_promoter' as const },
+  { code: 'KK-SJ-03', name: 'Shree Ji', aliases: ['Shreeji'], tier: 'company_promoter' as const },
+  { code: 'KK-BL-04', name: 'Blue Lassi', aliases: [] as string[], tier: 'company_promoter' as const },
+  { code: 'KK-SL-05', name: 'Siwon Lassi', aliases: [] as string[], tier: 'company_promoter' as const },
+  { code: 'KK-PBC-07', name: 'Popular Baati Chokha', aliases: ['Popular Baati'], tier: 'company_promoter' as const },
+  { code: 'KK-GB-08', name: 'GreenBerry', aliases: ['Greenberry', 'Green Berry'], tier: 'company_promoter' as const },
+  { code: 'KK-RB-09', name: 'Rahul Brothers', aliases: [] as string[], tier: 'company_promoter' as const },
 ];
 
 // code -> name map (available for other seed scripts if needed)
@@ -32,6 +32,7 @@ async function seedStores() {
     code: store.code,
     name: store.name,
     aliases: store.aliases,
+    tier: store.tier,
     address: null,
   }));
 

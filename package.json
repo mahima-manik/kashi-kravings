@@ -10,7 +10,9 @@
     "db:seed-stores": "tsx scripts/seed-stores.ts",
     "db:migrate-invoices": "tsx scripts/migrate-invoices.ts",
     "db:backfill-sales": "tsx scripts/backfill-sales.ts",
-    "db:seed-users": "tsx scripts/seed-users.ts"
+    "db:seed-users": "tsx scripts/seed-users.ts",
+    "db:migrate-store-tiers": "tsx scripts/migrate-store-tiers.ts",
+    "db:discover-stores": "tsx scripts/discover-invoice-stores.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",

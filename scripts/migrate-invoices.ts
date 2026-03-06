@@ -30,14 +30,14 @@ async function migrate() {
   // Fetch stores to build code -> id map
   const { data: storeRows, error: storesError } = await supabase
     .from('stores')
-    .select('id, code, name, aliases');
+    .select('id, code, name, aliases, tier');
 
   if (storesError) {
     console.error('Failed to fetch stores:', storesError.message);
     process.exit(1);
   }
 
-  const stores = storeRows ?? [];
+  const stores = (storeRows ?? []).map(s => ({ ...s, tier: s.tier ?? 'no_promoter' as const }));
   const storeCodeToId: Record<string, string> = Object.fromEntries(
     stores.map(s => [s.code, s.id])
   );
