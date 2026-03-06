@@ -1,6 +1,6 @@
 'use client';
 
-import { Send, MessageCircle, X, Loader2 } from 'lucide-react';
+import { Send, MessageCircle, X, Loader2, User, Bot, Trash2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@ai-sdk/react';
 
@@ -25,7 +25,7 @@ export default function Chat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState('');
 
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, setMessages } = useChat();
 
   const isLoading = status === 'streaming' || status === 'submitted';
 
@@ -63,9 +63,21 @@ export default function Chat() {
           <MessageCircle className="h-5 w-5" />
           <span className="font-semibold text-sm">Ask about your data</span>
         </div>
-        <button onClick={() => setOpen(false)} className="hover:bg-white/20 p-1 rounded">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              className="hover:bg-white/20 p-1 rounded"
+              aria-label="Clear chat"
+              title="Clear chat"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <button onClick={() => setOpen(false)} className="hover:bg-white/20 p-1 rounded">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -89,9 +101,14 @@ export default function Chat() {
           const text = getMessageText(m);
           if (!text && m.role === 'assistant') return null;
           return (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={m.id} className={`flex items-start gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {m.role === 'assistant' && (
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-gold/20 flex items-center justify-center mt-0.5">
+                  <Bot className="h-3.5 w-3.5 text-brand-gold" />
+                </div>
+              )}
               <div
-                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
                   m.role === 'user'
                     ? 'bg-chocolate-700 text-white rounded-br-md'
                     : 'bg-surface-card-hover text-gray-800 dark:text-gray-200 rounded-bl-md border border-surface-border-light'
@@ -99,12 +116,20 @@ export default function Chat() {
               >
                 {text}
               </div>
+              {m.role === 'user' && (
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-chocolate-700/20 flex items-center justify-center mt-0.5">
+                  <User className="h-3.5 w-3.5 text-chocolate-700" />
+                </div>
+              )}
             </div>
           );
         })}
 
         {isLoading && (
-          <div className="flex justify-start">
+          <div className="flex items-start gap-2 justify-start">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-gold/20 flex items-center justify-center mt-0.5">
+              <Bot className="h-3.5 w-3.5 text-brand-gold" />
+            </div>
             <div className="bg-surface-card-hover rounded-2xl rounded-bl-md px-3 py-2 border border-surface-border-light">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
             </div>
