@@ -2,14 +2,22 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Loader2, ArrowLeft, Pencil, Trash2, X, Check } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData } from '@/lib/types';
-import type { Store } from '@/lib/stores';
+import type { Store, StoreTier } from '@/lib/stores';
+import { STORE_TIERS } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
 import { InvoiceTable, StoreDailySalesTable, AgingDistribution } from '@/components/Dashboard';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
 
 type Tab = 'sales' | 'invoices';
+
+const TIER_BADGE_CLASSES: Record<StoreTier, string> = {
+  company_promoter: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  store_promoter: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  no_promoter: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+};
 
 interface DailySales {
   date: string;
@@ -69,6 +77,7 @@ function findStoreCodeLocal(contactName: string, stores: Store[]): string | null
 }
 
 export default function StoreDetailPage({ params }: { params: { storeCode: string } }) {
+  const router = useRouter();
   const storeName = decodeURIComponent(params.storeCode);
 
   const [storeList, setStoreList] = useState<Store[]>([]);
@@ -79,11 +88,18 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTier, setEditTier] = useState<StoreTier>('no_promoter');
+  const [editAliases, setEditAliases] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
   const storeCode = useMemo(() => findStoreCodeLocal(storeName, storeList), [storeName, storeList]);
-  const canonicalName = useMemo(() => {
-    const entry = storeList.find(s => s.code === storeCode);
-    return entry?.name ?? storeName;
-  }, [storeList, storeCode, storeName]);
+  const storeEntry = useMemo(() => storeList.find(s => s.code === storeCode), [storeList, storeCode]);
+  const canonicalName = storeEntry?.name ?? storeName;
 
   useEffect(() => {
     fetch('/api/stores')
@@ -112,14 +128,10 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           setInvoices(result.data.invoices.filter(inv => inv.contactName === storeName));
         }
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          return;
-        }
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setError('Failed to fetch invoices');
       } finally {
-        if (!signal.aborted) {
-          setIsLoadingInvoices(false);
-        }
+        if (!signal.aborted) setIsLoadingInvoices(false);
       }
     }
 
@@ -135,24 +147,71 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           setSalesRecords(filtered);
         }
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          return;
-        }
-        // Sales data is supplementary, don't block on error
+        if (err instanceof DOMException && err.name === 'AbortError') return;
       } finally {
-        if (!signal.aborted) {
-          setIsLoadingSales(false);
-        }
+        if (!signal.aborted) setIsLoadingSales(false);
       }
     }
 
     fetchInvoices();
     fetchSales();
 
-    return () => {
-      abortController.abort();
-    };
+    return () => { abortController.abort(); };
   }, [storeName, storeCode, canonicalName, storeList]);
+
+  function startEditing() {
+    setEditName(storeEntry?.name ?? storeName);
+    setEditTier(storeEntry?.tier ?? 'no_promoter');
+    setEditAliases((storeEntry?.aliases ?? []).join(', '));
+    setEditAddress(storeEntry?.address ?? '');
+    setIsEditing(true);
+  }
+
+  async function saveEdits() {
+    if (!storeCode) return;
+    setIsSaving(true);
+    try {
+      const aliases = editAliases.split(',').map(a => a.trim()).filter(Boolean);
+      const address = editAddress.trim() || null;
+      const res = await fetch('/api/stores', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: storeCode, name: editName, tier: editTier, aliases, address }),
+      });
+      const result: ApiResponse<Store> = await res.json();
+      if (result.success && result.data) {
+        setStoreList(prev => prev.map(s => s.code === storeCode ? result.data! : s));
+        setIsEditing(false);
+      } else {
+        setError(result.error ?? 'Failed to save');
+      }
+    } catch {
+      setError('Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!storeCode) return;
+    try {
+      const res = await fetch('/api/stores', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: storeCode }),
+      });
+      const result: ApiResponse<{ deleted: boolean }> = await res.json();
+      if (result.success) {
+        router.push('/stores');
+      } else {
+        setError(result.error ?? 'Failed to delete store');
+        setDeleteConfirm(false);
+      }
+    } catch {
+      setError('Failed to delete store');
+      setDeleteConfirm(false);
+    }
+  }
 
   const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
   const totalRemaining = invoices.reduce((s, inv) => s + inv.remainingAmount, 0);
@@ -161,7 +220,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
 
   const dailySales = useMemo(() => aggregateDailySales(salesRecords), [salesRecords]);
 
-  // Aging report data for this store
   const agingData = useMemo(() => {
     const unpaid = getUnpaidInvoices(invoices);
     return computeAgingBuckets(unpaid);
@@ -184,24 +242,150 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         <Link href="/stores" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-gold transition-colors mb-3">
           <ArrowLeft className="h-4 w-4" /> All Stores
         </Link>
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-brand-olive/20 to-brand-gold/20 dark:from-brand-olive/30 dark:to-brand-gold/30 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-            <span className="text-xl font-bold text-brand-olive/60 dark:text-brand-gold/60">
-              {storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-            </span>
-            <img
-              src={`/stores/${storeCode || encodeURIComponent(storeName)}.jpg`}
-              alt={storeName}
-              className="absolute inset-0 w-full h-full object-cover rounded-lg"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
+
+        {isEditing ? (
+          <div className="bg-surface-card border border-surface-border rounded-xl p-4 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tier</label>
+              <select
+                value={editTier}
+                onChange={e => setEditTier(e.target.value as StoreTier)}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+              >
+                {(Object.entries(STORE_TIERS) as [StoreTier, string][]).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Aliases (comma-separated)</label>
+              <input
+                type="text"
+                value={editAliases}
+                onChange={e => setEditAliases(e.target.value)}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                placeholder="e.g. Alt Name 1, Alt Name 2"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Address</label>
+              <input
+                type="text"
+                value={editAddress}
+                onChange={e => setEditAddress(e.target.value)}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                placeholder="e.g. Dashashwamedh Ghat, Varanasi"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={saveEdits}
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-brand-gold text-white hover:bg-brand-gold/90 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                Save
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-surface-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                <X className="h-3.5 w-3.5" /> Cancel
+              </button>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{storeName}</h2>
-            {storeCode && <p className="text-sm text-gray-500 dark:text-gray-400">{storeCode}</p>}
+        ) : (
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-brand-olive/20 to-brand-gold/20 dark:from-brand-olive/30 dark:to-brand-gold/30 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+              <span className="text-xl font-bold text-brand-olive/60 dark:text-brand-gold/60">
+                {storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </span>
+              <img
+                src={`/stores/${storeCode || encodeURIComponent(storeName)}.jpg`}
+                alt={storeName}
+                className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{canonicalName}</h2>
+                {storeEntry?.tier && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${TIER_BADGE_CLASSES[storeEntry.tier]}`}>
+                    {STORE_TIERS[storeEntry.tier]}
+                  </span>
+                )}
+              </div>
+              {storeCode && <p className="text-sm text-gray-500 dark:text-gray-400">{storeCode}</p>}
+              {storeEntry?.aliases && storeEntry.aliases.length > 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  Aliases: {storeEntry.aliases.join(', ')}
+                </p>
+              )}
+              {storeEntry?.address && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {storeEntry.address}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {storeCode && (
+                <>
+                  <button
+                    onClick={startEditing}
+                    className="p-2 rounded-lg text-gray-400 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors"
+                    title="Edit store"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                    title="Delete store"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-surface-card border border-surface-border rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Store</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to delete <strong>{canonicalName}</strong>? Invoice data will be preserved but unlinked.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="px-4 py-2 text-sm rounded-lg border border-surface-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="mb-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
@@ -308,4 +492,3 @@ function SummaryCard({ label, value, warn }: { label: string; value: string; war
     </div>
   );
 }
-

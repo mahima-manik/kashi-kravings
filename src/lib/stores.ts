@@ -1,8 +1,19 @@
+// Store tier definitions
+export const STORE_TIERS = {
+  company_promoter: 'Company Promoter',
+  store_promoter: 'Store Promoter',
+  no_promoter: 'No Promoter',
+} as const;
+
+export type StoreTier = keyof typeof STORE_TIERS;
+
 // Store definitions
 export interface Store {
   code: string;
   name: string;
   aliases?: string[];
+  tier: StoreTier;
+  address?: string | null;
 }
 
 /**

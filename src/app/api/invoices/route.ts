@@ -138,15 +138,48 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Fetch stores for contact_name -> store_id mapping
     const { data: storeRows, error: storesError } = await supabase
       .from('stores')
-      .select('id, code, name, aliases');
+      .select('id, code, name, aliases, tier');
     if (storesError) throw storesError;
 
-    const stores = storeRows ?? [];
-    const storeCodeToId: Record<string, string> = Object.fromEntries(
+    let stores = (storeRows ?? []).map(s => ({ ...s, tier: s.tier ?? 'no_promoter' }));
+    let storeCodeToId: Record<string, string> = Object.fromEntries(
       stores.map(s => [s.code, s.id])
     );
 
+    // Auto-discover new stores from invoice contact names
     const dataLines = lines.slice(headerIndex + 1);
+    const allContactNames: Set<string> = new Set();
+    for (const line of dataLines) {
+      const fields = parseCSVLine(line);
+      if (fields.length < 11 || !fields[0]) continue;
+      const contactName = (fields[2] || '').trim();
+      if (contactName) allContactNames.add(contactName);
+    }
+
+    const unmatchedNames = Array.from(allContactNames).filter(name => {
+      const code = findStoreCode(name, stores);
+      return !code && !storeCodeToId[name];
+    });
+
+    if (unmatchedNames.length > 0) {
+      const newStores = unmatchedNames.map(name => ({
+        code: name,
+        name: name,
+        aliases: [] as string[],
+        tier: 'no_promoter',
+        address: null,
+      }));
+
+      await supabase.from('stores').upsert(newStores, { onConflict: 'code' });
+
+      // Refresh store list
+      const { data: refreshed } = await supabase
+        .from('stores')
+        .select('id, code, name, aliases, tier');
+      stores = (refreshed ?? []).map(s => ({ ...s, tier: s.tier ?? 'no_promoter' }));
+      storeCodeToId = Object.fromEntries(stores.map(s => [s.code, s.id]));
+    }
+
     const rows: object[] = [];
     const invoiceNos: string[] = [];
 

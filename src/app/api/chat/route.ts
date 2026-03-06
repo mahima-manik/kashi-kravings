@@ -17,12 +17,12 @@ Format currency values in Indian Rupees (₹). Be concise and helpful.`,
     messages: messagesArray,
     tools: {
       listStores: tool({
-        description: 'List all stores with their codes and names',
+        description: 'List all stores with their codes, names, and tier classification (company_promoter, store_promoter, no_promoter)',
         inputSchema: z.object({}),
         execute: async () => {
           const { data, error } = await supabase
             .from('stores')
-            .select('code, name')
+            .select('code, name, tier')
             .order('name');
           if (error) throw error;
           return { stores: data ?? [] };
