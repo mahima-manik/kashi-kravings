@@ -2,12 +2,7 @@
 
 import { Send, MessageCircle, X, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-}
+import { useChat } from '@ai-sdk/react';
 
 const SUGGESTIONS = [
   'Which store has the most outstanding amount?',
@@ -16,13 +11,23 @@ const SUGGESTIONS = [
   'How were sales last week?',
 ];
 
+function getMessageText(m: { parts?: Array<{ type: string; text?: string }> }): string {
+  if (!m.parts) return '';
+  return m.parts
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text' && typeof p.text === 'string')
+    .map((p) => p.text)
+    .join('');
+}
+
 export default function Chat() {
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState('');
+
+  const { messages, sendMessage, status } = useChat();
+
+  const isLoading = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,29 +37,10 @@ export default function Chat() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const submit = async (text: string) => {
+  const submit = (text: string) => {
     if (!text.trim() || isLoading) return;
     setInput('');
-
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
-      });
-      const data = await res.json();
-      const botMsg: Message = { id: crypto.randomUUID(), role: 'assistant', text: data.reply };
-      setMessages((prev) => [...prev, botMsg]);
-    } catch {
-      const errMsg: Message = { id: crypto.randomUUID(), role: 'assistant', text: 'Something went wrong.' };
-      setMessages((prev) => [...prev, errMsg]);
-    } finally {
-      setIsLoading(false);
-    }
+    sendMessage({ text });
   };
 
   if (!open) {
@@ -99,19 +85,23 @@ export default function Chat() {
           </div>
         )}
 
-        {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
-                m.role === 'user'
-                  ? 'bg-chocolate-700 text-white rounded-br-md'
-                  : 'bg-surface-card-hover text-gray-800 dark:text-gray-200 rounded-bl-md border border-surface-border-light'
-              }`}
-            >
-              {m.text}
+        {messages.map((m) => {
+          const text = getMessageText(m);
+          if (!text && m.role === 'assistant') return null;
+          return (
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                  m.role === 'user'
+                    ? 'bg-chocolate-700 text-white rounded-br-md'
+                    : 'bg-surface-card-hover text-gray-800 dark:text-gray-200 rounded-bl-md border border-surface-border-light'
+                }`}
+              >
+                {text}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isLoading && (
           <div className="flex justify-start">
