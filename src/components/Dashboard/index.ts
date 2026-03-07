@@ -13,3 +13,4 @@ export { default as InvoiceTable } from './InvoiceTable';
 export { default as StoreDailySalesTable } from './StoreDailySalesTable';
 export { default as AgingReport } from './AgingReport';
 export { default as AgingDistribution } from './AgingDistribution';
+export { default as StoreAnalytics } from './StoreAnalytics';

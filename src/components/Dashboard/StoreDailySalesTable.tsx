@@ -2,18 +2,7 @@
 
 import { Users } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
-
-export interface DailySales {
-  date: string;
-  saleValue: number;
-  collectionReceived: number;
-  totalUnits: number;
-  numTSO: number;
-  promotionDuration: number;
-  sampleGiven: number;
-  sampleConsumed: number;
-  entries: number;
-}
+import type { DailySales } from '@/lib/types';
 
 interface StoreDailySalesTableProps {
   dailySales: DailySales[];

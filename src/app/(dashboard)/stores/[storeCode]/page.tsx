@@ -4,32 +4,20 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, Pencil, Trash2, X, Check } from 'lucide-react';
-import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData } from '@/lib/types';
+import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData, DailySales } from '@/lib/types';
 import type { Store, StoreTier } from '@/lib/stores';
 import { STORE_TIERS } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
-import { InvoiceTable, StoreDailySalesTable, AgingDistribution } from '@/components/Dashboard';
+import { InvoiceTable, StoreDailySalesTable, AgingDistribution, StoreAnalytics } from '@/components/Dashboard';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
 
-type Tab = 'sales' | 'invoices';
+type Tab = 'sales' | 'invoices' | 'analytics';
 
 const TIER_BADGE_CLASSES: Record<StoreTier, string> = {
   company_promoter: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   store_promoter: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   no_promoter: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
 };
-
-interface DailySales {
-  date: string;
-  saleValue: number;
-  collectionReceived: number;
-  totalUnits: number;
-  numTSO: number;
-  promotionDuration: number;
-  sampleGiven: number;
-  sampleConsumed: number;
-  entries: number;
-}
 
 function aggregateDailySales(records: SalesRecord[]): DailySales[] {
   const map = new Map<string, DailySales>();
@@ -432,6 +420,18 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         >
           Daily Sales{dailySales.length > 0 && ` (${dailySales.length})`}
         </button>
+        {storeEntry?.tier === 'company_promoter' && (
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              activeTab === 'analytics'
+                ? 'border-brand-gold text-brand-gold'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Analytics
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -477,6 +477,11 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
                 No invoices found for this store.
               </div>
             )
+          )}
+
+          {/* Analytics Tab */}
+          {activeTab === 'analytics' && (
+            <StoreAnalytics dailySales={dailySales} />
           )}
         </>
       )}

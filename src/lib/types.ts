@@ -117,6 +117,19 @@ export interface InvoiceData {
   unpaidCount: number;
 }
 
+// Aggregated daily sales for a single store
+export interface DailySales {
+  date: string;
+  saleValue: number;
+  collectionReceived: number;
+  totalUnits: number;
+  numTSO: number;
+  promotionDuration: number;
+  sampleGiven: number;
+  sampleConsumed: number;
+  entries: number;
+}
+
 // Notification types
 export interface NotificationPayload {
   type: 'daily_summary' | 'alert' | 'custom';
