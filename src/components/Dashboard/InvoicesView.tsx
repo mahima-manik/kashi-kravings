@@ -7,6 +7,7 @@ import type { Firm, InvoiceData, ApiResponse } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import InvoiceTable from './InvoiceTable';
 import AgingReport from './AgingReport';
+import MetricCard from './MetricCard';
 
 type Tab = 'invoices' | 'aging';
 
@@ -179,10 +180,10 @@ export default function InvoicesView() {
           {/* Summary Cards */}
           {allInvoices.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SummaryCard label="Total Invoices" value={String(allInvoices.length)} />
-              <SummaryCard label="Total Amount" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
-              <SummaryCard label="Remaining" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
-              <SummaryCard
+              <MetricCard label="Total Invoices" value={String(allInvoices.length)} />
+              <MetricCard label="Total Amount" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.amount, 0))} />
+              <MetricCard label="Remaining" value={formatCurrency(allInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0))} />
+              <MetricCard
                 label="Status"
                 value={`${allInvoices.filter(inv => inv.invoiceStatus === 'Paid').length} Paid / ${allInvoices.filter(inv => inv.invoiceStatus !== 'Paid').length} Unpaid`}
               />
@@ -207,15 +208,6 @@ export default function InvoicesView() {
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-4">
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-      <p className="text-gray-900 dark:text-white font-semibold text-sm">{value}</p>
     </div>
   );
 }

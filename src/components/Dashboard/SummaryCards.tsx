@@ -2,6 +2,7 @@
 
 import { SalesRecord } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
+import MetricCard from '@/components/Dashboard/MetricCard';
 
 interface SummaryCardsProps {
   records: SalesRecord[];
@@ -24,15 +25,7 @@ export default function SummaryCards({ records }: SummaryCardsProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => (
-        <div
-          key={card.label}
-          className="bg-surface-card rounded-xl border border-surface-border p-4"
-        >
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{card.label}</p>
-          <p className="text-gray-900 dark:text-white font-semibold text-sm">
-            {card.value}
-          </p>
-        </div>
+        <MetricCard key={card.label} label={card.label} value={card.value} />
       ))}
     </div>
   );

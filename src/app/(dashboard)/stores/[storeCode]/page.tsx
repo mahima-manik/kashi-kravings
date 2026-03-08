@@ -8,7 +8,7 @@ import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData, DailySal
 import type { Store, StoreTier } from '@/lib/stores';
 import { STORE_TIERS } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
-import { InvoiceTable, StoreDailySalesTable, AgingDistribution, StoreAnalytics } from '@/components/Dashboard';
+import { InvoiceTable, StoreDailySalesTable, AgingDistribution, StoreAnalytics, MetricCard } from '@/components/Dashboard';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
 
 type Tab = 'sales' | 'invoices' | 'analytics';
@@ -384,10 +384,10 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
       {/* Summary cards */}
       {(invoices.length > 0 || salesRecords.length > 0) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <SummaryCard label="Total Sales" value={salesRecords.length > 0 ? formatCurrency(totalSalesValue) : '—'} />
-          <SummaryCard label="Invoice Amount" value={invoices.length > 0 ? formatCurrency(totalAmount) : '—'} />
-          <SummaryCard label="Remaining" value={invoices.length > 0 ? formatCurrency(totalRemaining) : '—'} warn={totalRemaining > 0} />
-          <SummaryCard label="Status" value={invoices.length > 0 ? `${paidCount} Paid / ${unpaidCount} Unpaid` : '—'} />
+          <MetricCard label="Total Sales" value={salesRecords.length > 0 ? formatCurrency(totalSalesValue) : '—'} />
+          <MetricCard label="Invoice Amount" value={invoices.length > 0 ? formatCurrency(totalAmount) : '—'} />
+          <MetricCard label="Remaining" value={invoices.length > 0 ? formatCurrency(totalRemaining) : '—'} warn={totalRemaining > 0} />
+          <MetricCard label="Status" value={invoices.length > 0 ? `${paidCount} Paid / ${unpaidCount} Unpaid` : '—'} />
         </div>
       )}
 
@@ -486,14 +486,5 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         </>
       )}
     </>
-  );
-}
-
-function SummaryCard({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
-  return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-4">
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-      <p className={`font-semibold text-sm ${warn ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>{value}</p>
-    </div>
   );
 }
