@@ -1,8 +1,8 @@
 import type { DailySales } from '@/lib/types';
 
 export interface CostParams {
-  tsoCostPerDay: number;     // default 500
-  sampleCostPerUnit: number; // default 15
+  tsoCostPerDay: number;     // default 450
+  sampleCostPerUnit: number; // default 7.5
 }
 
 export interface DailyMetrics {
@@ -29,8 +29,8 @@ export interface WeeklyMetrics {
 }
 
 export const DEFAULT_COSTS: CostParams = {
-  tsoCostPerDay: 500,
-  sampleCostPerUnit: 15,
+  tsoCostPerDay: 450,
+  sampleCostPerUnit: 7.5,
 };
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -99,8 +99,9 @@ export function getDOWAverages(
 export function computeDailyMetrics(
   dailySales: DailySales[],
   costs: CostParams,
+  allSalesForDOW?: DailySales[],
 ): DailyMetrics[] {
-  const dowAvgs = getDOWAverages(dailySales);
+  const dowAvgs = getDOWAverages(allSalesForDOW ?? dailySales);
 
   return dailySales.map((d) => {
     const tsoCost = d.numTSO * costs.tsoCostPerDay;
@@ -180,11 +181,11 @@ export function computeWeeklyMetrics(
   return weeks.map(([monday, w], i) => {
     const netReturn = w.sales - w.tsoCost - w.sampleCost;
 
-    // W1: WoW Growth
+    // W1: WoW Growth (based on net return)
     let wowGrowth: number | null = null;
     if (i > 0) {
-      const prevSales = weeks[i - 1][1].sales;
-      wowGrowth = prevSales > 0 ? (w.sales - prevSales) / prevSales : null;
+      const prevNet = weeks[i - 1][1].sales - weeks[i - 1][1].tsoCost - weeks[i - 1][1].sampleCost;
+      wowGrowth = prevNet !== 0 ? (netReturn - prevNet) / Math.abs(prevNet) : null;
     }
 
     // W4: Sample ROI

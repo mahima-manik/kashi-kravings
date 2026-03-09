@@ -3,10 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Info } from 'lucide-react';
 import {
-  ComposedChart,
   BarChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,7 +12,6 @@ import {
   ResponsiveContainer,
   Cell,
   LabelList,
-  Legend,
 } from 'recharts';
 import type { DailySales } from '@/lib/types';
 import {
@@ -50,9 +47,11 @@ function loadCosts(): CostParams {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      const tsoCostPerDay = Number(parsed.tsoCostPerDay);
+      const sampleCostPerUnit = Number(parsed.sampleCostPerUnit);
       return {
-        tsoCostPerDay: Number(parsed.tsoCostPerDay) || DEFAULT_COSTS.tsoCostPerDay,
-        sampleCostPerUnit: Number(parsed.sampleCostPerUnit) || DEFAULT_COSTS.sampleCostPerUnit,
+        tsoCostPerDay: tsoCostPerDay > 0 ? tsoCostPerDay : DEFAULT_COSTS.tsoCostPerDay,
+        sampleCostPerUnit: sampleCostPerUnit > 0 ? sampleCostPerUnit : DEFAULT_COSTS.sampleCostPerUnit,
       };
     }
   } catch { /* ignore */ }
@@ -83,15 +82,18 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
     } catch { /* ignore */ }
   }, [costs]);
 
-  // Filter dailySales by time range
-  const filteredSales = useMemo(() => {
-    if (timeRange === 'all') return dailySales;
-    const days = timeRange === '7d' ? 7 : timeRange === '14d' ? 14 : 30;
-    const sorted = [...dailySales].sort((a, b) => b.date.localeCompare(a.date));
-    return sorted.slice(0, days);
-  }, [dailySales, timeRange]);
+  // All days with TSOs (for DOW baseline across full history)
+  const allTSODays = useMemo(() => dailySales.filter(d => d.numTSO > 0), [dailySales]);
 
-  const dailyMetrics = useMemo(() => computeDailyMetrics(filteredSales, costs), [filteredSales, costs]);
+  // Filter by time range
+  const filteredSales = useMemo(() => {
+    if (timeRange === 'all') return allTSODays;
+    const days = timeRange === '7d' ? 7 : timeRange === '14d' ? 14 : 30;
+    const sorted = [...allTSODays].sort((a, b) => b.date.localeCompare(a.date));
+    return sorted.slice(0, days);
+  }, [allTSODays, timeRange]);
+
+  const dailyMetrics = useMemo(() => computeDailyMetrics(filteredSales, costs, allTSODays), [filteredSales, costs, allTSODays]);
   const weeklyMetrics = useMemo(() => computeWeeklyMetrics(filteredSales, costs), [filteredSales, costs]);
 
   // Chart data: ascending order
@@ -149,13 +151,6 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
     return bestDay ? { day: bestDay, avg: bestAvg } : null;
   }, [chartDaily]);
 
-  const chartWeekly = useMemo(() => {
-    return weeklyMetrics.filter(w => w.wowGrowth !== null).map(w => ({
-      ...w,
-      growthPct: w.wowGrowth! * 100,
-    }));
-  }, [weeklyMetrics]);
-
   if (dailySales.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400 text-sm">
@@ -195,10 +190,13 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
               <span className="text-sm text-gray-500 dark:text-gray-400">₹</span>
               <input
                 type="number"
-                min={0}
+                min={0.01}
                 step={50}
                 value={costs.tsoCostPerDay}
-                onChange={e => setCosts(c => ({ ...c, tsoCostPerDay: Number(e.target.value) || 0 }))}
+                onChange={e => {
+                  const value = Number(e.target.value);
+                  setCosts(c => ({ ...c, tsoCostPerDay: value > 0 ? value : DEFAULT_COSTS.tsoCostPerDay }));
+                }}
                 className="w-24 text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-1.5 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
               />
             </div>
@@ -211,10 +209,13 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
               <span className="text-sm text-gray-500 dark:text-gray-400">₹</span>
               <input
                 type="number"
-                min={0}
-                step={1}
+                min={0.01}
+                step={0.1}
                 value={costs.sampleCostPerUnit}
-                onChange={e => setCosts(c => ({ ...c, sampleCostPerUnit: Number(e.target.value) || 0 }))}
+                onChange={e => {
+                  const value = Number(e.target.value);
+                  setCosts(c => ({ ...c, sampleCostPerUnit: value > 0 ? value : DEFAULT_COSTS.sampleCostPerUnit }));
+                }}
                 className="w-24 text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-1.5 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
               />
             </div>
@@ -269,7 +270,7 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartFiltered} margin={{ top: 20, right: 40, left: 20, bottom: 30 }}>
+              <BarChart data={chartFiltered} margin={{ top: 20, right: 20, left: 20, bottom: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} vertical={false} />
                 <XAxis
                   dataKey="dateLabel"
@@ -280,63 +281,64 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
                   height={45}
                 />
                 <YAxis
-                  yAxisId="left"
                   tickFormatter={formatCurrencyCompact}
                   tick={{ fontSize: 12, fill: chart.axisText }}
                   tickLine={false}
                   axisLine={{ stroke: chart.grid }}
                 />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 12, fill: chart.axisText }}
-                  tickLine={false}
-                  axisLine={{ stroke: chart.grid }}
-                  allowDecimals={false}
-                  label={{ value: 'TSOs', angle: 90, position: 'insideRight', offset: -5, style: { fontSize: 11, fill: chart.axisText } }}
-                />
                 <Tooltip
-                  formatter={(value: number, name: string) => {
-                    if (name === 'numTSO') return [value, 'TSOs'];
-                    return [formatCurrency(value), 'Net Return'];
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const item = payload[0]?.payload;
+                    if (!item) return null;
+                    return (
+                      <div style={{
+                        backgroundColor: chart.tooltipBg,
+                        border: `1px solid ${chart.tooltipBorder}`,
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: 12,
+                        color: chart.tooltipText,
+                      }}>
+                        <p style={{ color: chart.tooltipLabel, marginBottom: 4 }}>{item.dayName}, {item.dateLabel}</p>
+                        <p>Net Return: <strong>{formatCurrency(item.netReturn)}</strong></p>
+                        <p>TSOs: <strong>{item.numTSO}</strong></p>
+                        {item.dowBaseline !== null && (
+                          <p style={{ color: item.dowBaseline >= 1 ? '#16a34a' : '#dc2626' }}>
+                            vs {item.dayName} avg: {item.dowBaseline >= 1 ? '+' : ''}{((item.dowBaseline - 1) * 100).toFixed(0)}%
+                          </p>
+                        )}
+                      </div>
+                    );
                   }}
-                  labelFormatter={(_label, payload) => {
-                    const item = payload?.[0]?.payload;
-                    return item ? `${item.dayName}, ${item.dateLabel}` : '';
-                  }}
-                  contentStyle={{
-                    backgroundColor: chart.tooltipBg,
-                    border: `1px solid ${chart.tooltipBorder}`,
-                    borderRadius: '8px',
-                    color: chart.tooltipText,
-                  }}
-                  labelStyle={{ color: chart.tooltipLabel }}
                 />
-                <Legend
-                  formatter={(value) => value === 'netReturn' ? 'Net Return' : 'TSOs'}
-                  wrapperStyle={{ color: chart.axisText, fontSize: 12 }}
-                />
-                <Bar yAxisId="left" dataKey="netReturn" radius={[4, 4, 0, 0]} barSize={20}>
+                <Bar dataKey="netReturn" radius={[4, 4, 0, 0]} barSize={20}>
                   {chartFiltered.map((entry, i) => (
-                    <Cell key={i} fill={entry.netReturn >= 0 ? '#22c55e' : '#ef4444'} />
+                    <Cell key={i} fill={entry.netReturn >= 0 ? '#94a3b8' : '#fca5a5'} />
                   ))}
                   <LabelList
                     dataKey="netReturn"
                     position="top"
-                    formatter={(v: number) => formatCurrencyCompact(v)}
-                    style={{ fontSize: 10, fill: chart.axisText }}
+                    content={({ x, y, width, index }) => {
+                      const entry = chartFiltered[index ?? 0];
+                      if (!entry || entry.dowBaseline === null) return null;
+                      const aboveAvg = entry.dowBaseline >= 1;
+                      return (
+                        <text
+                          x={(x as number) + (width as number) / 2}
+                          y={(y as number) - 6}
+                          textAnchor="middle"
+                          fontSize={12}
+                          fill={aboveAvg ? '#16a34a' : '#dc2626'}
+                          fontWeight={700}
+                        >
+                          {aboveAvg ? '\u2191' : '\u2193'}
+                        </text>
+                      );
+                    }}
                   />
                 </Bar>
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="numTSO"
-                  stroke="#A69A5B"
-                  strokeWidth={2}
-                  dot={{ fill: '#A69A5B', r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </ComposedChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -359,7 +361,6 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sample Cost</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Net Return</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">WoW Growth</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sample ROI</th>
                 </tr>
               </thead>
               <tbody>
@@ -382,63 +383,10 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
                         <span className="text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {w.sampleROI !== null ? (
-                        <span className={w.sampleROI >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                          {w.sampleROI >= 0 ? '+' : ''}{w.sampleROI.toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">N/A</span>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* WoW Growth Chart */}
-      {chartWeekly.length > 0 && (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-6">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
-            Week-over-Week Sales Growth
-          </h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartWeekly} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
-                <XAxis
-                  dataKey="weekLabel"
-                  tick={{ fontSize: 11, fill: chart.axisText }}
-                  tickLine={false}
-                  axisLine={{ stroke: chart.grid }}
-                  interval={0}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => `${v.toFixed(0)}%`}
-                  tick={{ fontSize: 12, fill: chart.axisText }}
-                  tickLine={false}
-                  axisLine={{ stroke: chart.grid }}
-                />
-                <Tooltip
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'WoW Growth']}
-                  contentStyle={{
-                    backgroundColor: chart.tooltipBg,
-                    border: `1px solid ${chart.tooltipBorder}`,
-                    borderRadius: '8px',
-                    color: chart.tooltipText,
-                  }}
-                  labelStyle={{ color: chart.tooltipLabel }}
-                />
-                <Bar dataKey="growthPct" radius={[4, 4, 0, 0]}>
-                  {chartWeekly.map((entry, i) => (
-                    <Cell key={i} fill={entry.growthPct >= 0 ? '#22c55e' : '#ef4444'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </div>
       )}
