@@ -23,9 +23,11 @@ export interface WeeklyMetrics {
   totalTSOCost: number;
   totalSampleCost: number;
   netReturn: number;          // W2
+  dayCount: number;           // number of TSO deployment days in the week
   wowGrowth: number | null;  // W1 — decimal (0.15 = +15%)
   sampleROI: number | null;  // W4
   bestDay: string;            // 3-letter DOW of highest sale day (e.g. "Mon")
+  worstDay: string;           // 3-letter DOW of lowest sale day
 }
 
 export const DEFAULT_COSTS: CostParams = {
@@ -138,7 +140,7 @@ export function computeWeeklyMetrics(
   // Group by week
   const weekMap = new Map<
     string,
-    { sales: number; tsoCost: number; sampleCost: number; sampledDaySales: number[]; unsampledDaySales: number[]; bestDayDate: string; bestDaySale: number }
+    { sales: number; tsoCost: number; sampleCost: number; dayCount: number; sampledDaySales: number[]; unsampledDaySales: number[]; bestDayDate: string; bestDaySale: number; worstDayDate: string; worstDaySale: number }
   >();
 
   // Sort ascending for proper WoW ordering
@@ -154,6 +156,7 @@ export function computeWeeklyMetrics(
       existing.sales += d.saleValue;
       existing.tsoCost += tsoCost;
       existing.sampleCost += sampleCost;
+      existing.dayCount += 1;
       if (d.sampleGiven > 0) {
         existing.sampledDaySales.push(d.saleValue);
       } else {
@@ -163,15 +166,22 @@ export function computeWeeklyMetrics(
         existing.bestDaySale = d.saleValue;
         existing.bestDayDate = d.date;
       }
+      if (d.saleValue < existing.worstDaySale) {
+        existing.worstDaySale = d.saleValue;
+        existing.worstDayDate = d.date;
+      }
     } else {
       weekMap.set(monday, {
         sales: d.saleValue,
         tsoCost,
         sampleCost,
+        dayCount: 1,
         sampledDaySales: d.sampleGiven > 0 ? [d.saleValue] : [],
         unsampledDaySales: d.sampleGiven > 0 ? [] : [d.saleValue],
         bestDayDate: d.date,
         bestDaySale: d.saleValue,
+        worstDayDate: d.date,
+        worstDaySale: d.saleValue,
       });
     }
   }
@@ -181,11 +191,13 @@ export function computeWeeklyMetrics(
   return weeks.map(([monday, w], i) => {
     const netReturn = w.sales - w.tsoCost - w.sampleCost;
 
-    // W1: WoW Growth (based on net return)
+    // W1: WoW Sales Growth — (thisWeekSales − lastWeekSales) / lastWeekSales
     let wowGrowth: number | null = null;
     if (i > 0) {
-      const prevNet = weeks[i - 1][1].sales - weeks[i - 1][1].tsoCost - weeks[i - 1][1].sampleCost;
-      wowGrowth = prevNet !== 0 ? (netReturn - prevNet) / Math.abs(prevNet) : null;
+      const prevSales = weeks[i - 1][1].sales;
+      if (prevSales > 0) {
+        wowGrowth = (w.sales - prevSales) / prevSales;
+      }
     }
 
     // W4: Sample ROI
@@ -203,9 +215,11 @@ export function computeWeeklyMetrics(
       totalTSOCost: w.tsoCost,
       totalSampleCost: w.sampleCost,
       netReturn,
+      dayCount: w.dayCount,
       wowGrowth,
       sampleROI,
       bestDay: getDOWName(w.bestDayDate),
+      worstDay: getDOWName(w.worstDayDate),
     };
-  });
+  }).reverse();
 }

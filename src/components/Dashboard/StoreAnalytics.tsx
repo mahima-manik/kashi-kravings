@@ -355,7 +355,9 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
               <thead>
                 <tr className="border-b border-surface-border bg-gray-50 dark:bg-white/5">
                   <th className="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Week</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Days</th>
                   <th className="text-center px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Best Day</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Worst Day</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sales</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">TSO Cost</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Sample Cost</th>
@@ -367,7 +369,9 @@ export default function StoreAnalytics({ dailySales }: StoreAnalyticsProps) {
                 {weeklyMetrics.map((w) => (
                   <tr key={w.weekStart} className="border-b border-surface-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <td className="px-4 py-3 text-gray-900 dark:text-white font-medium whitespace-nowrap">{w.weekLabel}</td>
+                    <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{w.dayCount}</td>
                     <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{w.bestDay}</td>
+                    <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">{w.worstDay}</td>
                     <td className="px-4 py-3 text-right text-gray-900 dark:text-white">{formatCurrency(w.totalSales)}</td>
                     <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(w.totalTSOCost)}</td>
                     <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(w.totalSampleCost)}</td>
