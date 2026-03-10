@@ -1,114 +1,77 @@
 'use client';
 
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  LabelList,
 } from 'recharts';
 import { SalesRecord } from '@/lib/types';
-import { formatCurrencyCompact } from '@/lib/format';
+import { formatCurrencyCompact, formatCurrency } from '@/lib/format';
 import { useChartTheme } from '@/lib/useChartTheme';
 
 interface SalesByLocationProps {
   records: SalesRecord[];
 }
 
-const STORE_COLORS: Record<string, string> = {};
-const COLOR_PALETTE = [
-  '#A69A5B', '#5BA6A6', '#A65B5B', '#5B7AA6', '#8B5BA6',
-  '#5BA66A', '#A6835B', '#6A5BA6', '#A65B8B', '#5BA694',
-];
-
-function getStoreColor(storeName: string): string {
-  if (!STORE_COLORS[storeName]) {
-    const idx = Object.keys(STORE_COLORS).length % COLOR_PALETTE.length;
-    STORE_COLORS[storeName] = COLOR_PALETTE[idx];
-  }
-  return STORE_COLORS[storeName];
-}
-
-function formatDateLabel(dateStr: string): string {
-  const [, month, day] = dateStr.split('-');
-  return `${parseInt(day)}/${parseInt(month)}`;
-}
-
 export default function SalesByLocation({ records }: SalesByLocationProps) {
   const chart = useChartTheme();
 
-  // Aggregate daily sales per store
-  const dailyStoreMap = new Map<string, Map<string, number>>();
-  const storeNames = new Set<string>();
-
+  // Aggregate total sales per store
+  const storeMap = new Map<string, number>();
   for (const record of records) {
-    if (!record.date || !record.storeName) continue;
-    storeNames.add(record.storeName);
-
-    let dateMap = dailyStoreMap.get(record.date);
-    if (!dateMap) {
-      dateMap = new Map();
-      dailyStoreMap.set(record.date, dateMap);
-    }
-    dateMap.set(record.storeName, (dateMap.get(record.storeName) || 0) + record.saleValue);
+    if (!record.storeName || record.saleValue <= 0) continue;
+    storeMap.set(record.storeName, (storeMap.get(record.storeName) || 0) + record.saleValue);
   }
 
-  const sortedDates = Array.from(dailyStoreMap.keys()).sort();
-  const sortedStores = Array.from(storeNames).filter((store) => {
-    return records.some((r) => r.storeName === store && r.saleValue > 0);
-  }).sort();
+  const chartData = Array.from(storeMap.entries())
+    .map(([name, sales]) => ({ name, sales }))
+    .sort((a, b) => b.sales - a.sales);
 
-  const chartData = sortedDates.map((date) => {
-    const entry: Record<string, string | number> = {
-      date,
-      dateLabel: formatDateLabel(date),
-    };
-    const dateMap = dailyStoreMap.get(date)!;
-    for (const store of sortedStores) {
-      entry[store] = dateMap.get(store) || 0;
-    }
-    return entry;
-  });
+  if (chartData.length === 0) {
+    return (
+      <div>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Sales by Outlet</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No sales data for selected period.</p>
+      </div>
+    );
+  }
+
+  const chartHeight = Math.max(200, chartData.length * 45);
 
   return (
     <div>
-      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Sales by Location</h3>
-      <div className="h-80">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Sales by Outlet</h3>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Total sales per outlet for selected period</p>
+      <div style={{ height: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <BarChart
             data={chartData}
-            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+            layout="vertical"
+            margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
             <XAxis
-              dataKey="dateLabel"
-              tick={{ fontSize: 12, fill: chart.axisText }}
-              tickLine={false}
-              axisLine={{ stroke: chart.grid }}
-            />
-            <YAxis
+              type="number"
               tickFormatter={formatCurrencyCompact}
               tick={{ fontSize: 12, fill: chart.axisText }}
               tickLine={false}
               axisLine={{ stroke: chart.grid }}
             />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={120}
+              tick={{ fontSize: 12, fill: chart.axisText }}
+              tickLine={false}
+              axisLine={{ stroke: chart.grid }}
+            />
             <Tooltip
-              labelFormatter={(_label, payload) => {
-                const dateStr = payload?.[0]?.payload?.date;
-                if (dateStr) {
-                  const [y, m, d] = dateStr.split('-');
-                  return new Date(Number(y), Number(m) - 1, Number(d))
-                    .toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                }
-                return _label;
-              }}
-              formatter={(value: number, name: string) => [
-                `₹${value.toLocaleString('en-IN')}`,
-                name,
-              ]}
+              formatter={(value: number) => [formatCurrency(value), 'Sales']}
               contentStyle={{
                 backgroundColor: chart.tooltipBg,
                 border: `1px solid ${chart.tooltipBorder}`,
@@ -116,23 +79,17 @@ export default function SalesByLocation({ records }: SalesByLocationProps) {
                 color: chart.tooltipText,
               }}
               labelStyle={{ color: chart.tooltipLabel }}
+              cursor={{ fill: chart.cursorFill }}
             />
-            <Legend
-              wrapperStyle={{ fontSize: 12, color: chart.axisText }}
-            />
-            {sortedStores.map((store) => (
-              <Line
-                key={store}
-                type="monotone"
-                dataKey={store}
-                stroke={getStoreColor(store)}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                connectNulls
+            <Bar dataKey="sales" fill="#A69A5B" radius={[0, 4, 4, 0]} barSize={24}>
+              <LabelList
+                dataKey="sales"
+                position="right"
+                formatter={(value: number) => formatCurrencyCompact(value)}
+                style={{ fontSize: 11, fill: chart.axisText }}
               />
-            ))}
-          </LineChart>
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>

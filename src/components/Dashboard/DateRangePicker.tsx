@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { format, subDays, subWeeks, subMonths } from 'date-fns';
+import { format, subWeeks, subMonths } from 'date-fns';
 import { Calendar, ChevronDown } from 'lucide-react';
 
-export type PresetKey = '3d' | '1w' | '1m' | 'custom';
+export type PresetKey = 'all' | '1w' | '1m' | 'custom';
 
 interface DateRangePickerProps {
   startDate: string;
@@ -22,14 +22,6 @@ interface DateRangePickerProps {
 
 const PRESETS: { key: PresetKey; label: string; getRange: () => { start: string; end: string } }[] = [
   {
-    key: '3d',
-    label: 'Last 3 days',
-    getRange: () => ({
-      start: format(subDays(new Date(), 2), 'yyyy-MM-dd'),
-      end: format(new Date(), 'yyyy-MM-dd'),
-    }),
-  },
-  {
     key: '1w',
     label: 'Last 1 week',
     getRange: () => ({
@@ -42,6 +34,14 @@ const PRESETS: { key: PresetKey; label: string; getRange: () => { start: string;
     label: 'Last 1 month',
     getRange: () => ({
       start: format(subMonths(new Date(), 1), 'yyyy-MM-dd'),
+      end: format(new Date(), 'yyyy-MM-dd'),
+    }),
+  },
+  {
+    key: 'all',
+    label: 'All',
+    getRange: () => ({
+      start: '2000-01-01',
       end: format(new Date(), 'yyyy-MM-dd'),
     }),
   },

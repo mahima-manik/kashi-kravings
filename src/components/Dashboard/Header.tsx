@@ -7,7 +7,7 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 const tabs = [
-  { id: 'sales', label: 'Sales', href: '/' },
+  { id: 'sales', label: 'Promotions', href: '/' },
   { id: 'invoices', label: 'Invoices', href: '/invoices' },
   { id: 'stores', label: 'Stores', href: '/stores', icon: Store },
 ];
