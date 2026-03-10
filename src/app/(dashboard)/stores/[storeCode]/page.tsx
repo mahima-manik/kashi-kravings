@@ -10,6 +10,7 @@ import { STORE_TIERS } from '@/lib/stores';
 import { formatCurrency } from '@/lib/format';
 import { InvoiceTable, StoreDailySalesTable, AgingDistribution, StoreAnalytics, MetricCard } from '@/components/Dashboard';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
+import { computeStoreIntelligence } from '@/lib/store-intelligence';
 
 type Tab = 'sales' | 'invoices' | 'analytics';
 
@@ -213,6 +214,12 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     return computeAgingBuckets(unpaid);
   }, [invoices]);
 
+  const storeIntel = useMemo(() => {
+    if (invoices.length === 0) return null;
+    const intel = computeStoreIntelligence(invoices);
+    return intel.get(storeName) ?? null;
+  }, [invoices, storeName]);
+
   const totalSalesValue = salesRecords.reduce((s, r) => s + r.saleValue, 0);
   const totalTSOs = salesRecords.reduce((s, r) => s + r.numTSO, 0);
   const totalCollection = salesRecords.reduce((s, r) => s + r.collectionReceived, 0);
@@ -388,6 +395,37 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           <MetricCard label="Invoice Amount" value={invoices.length > 0 ? formatCurrency(totalAmount) : '—'} />
           <MetricCard label="Remaining" value={invoices.length > 0 ? formatCurrency(totalRemaining) : '—'} warn={totalRemaining > 0} />
           <MetricCard label="Status" value={invoices.length > 0 ? `${paidCount} Paid / ${unpaidCount} Unpaid` : '—'} />
+        </div>
+      )}
+
+      {/* Intelligence Metrics */}
+      {storeIntel && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <MetricCard
+            label="Avg Order Value"
+            value={formatCurrency(storeIntel.aov)}
+          />
+          <MetricCard
+            label="Order Frequency"
+            value={storeIntel.avgFrequencyDays != null ? `Every ${storeIntel.avgFrequencyDays} days` : '—'}
+          />
+          <MetricCard
+            label="Last Order"
+            value={storeIntel.lastOrderDaysAgo != null ? `${storeIntel.lastOrderDaysAgo} days ago` : '—'}
+            warn={storeIntel.isOverdueForOrder}
+            subtitle={storeIntel.isOverdueForOrder ? 'Overdue for order' : undefined}
+          />
+          <MetricCard
+            label="Payment Reliability"
+            value={`${Math.round(storeIntel.paidPct)}%`}
+            warn={storeIntel.paidPct < 50}
+          />
+          <MetricCard
+            label="Health Score"
+            value={`${storeIntel.healthScore}/100`}
+            warn={storeIntel.healthScore < 40}
+            subtitle={storeIntel.healthScore >= 70 ? 'Healthy' : storeIntel.healthScore >= 40 ? 'Moderate' : 'At Risk'}
+          />
         </div>
       )}
 
