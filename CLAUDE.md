@@ -42,6 +42,9 @@ src/
 │   ├── AgingReport.tsx         # Aging buckets report
 │   ├── AgingDistribution.tsx   # Aging chart
 │   ├── DateRangePicker.tsx     # Date range selector
+│   ├── MetricCard.tsx          # Reusable KPI card (label, value, warn, subtitle)
+│   ├── StoreAnalytics.tsx      # Store-level analytics (company_promoter only)
+│   ├── StoreDailySalesTable.tsx # Daily sales breakdown table
 │   └── index.ts                # Barrel exports
 ├── lib/
 │   ├── types.ts                # All TypeScript interfaces (SalesRecord, Invoice, DashboardData, Firm, etc.)
@@ -51,12 +54,13 @@ src/
 │   ├── auth.ts                 # Session cookie signing/verification
 │   ├── google-sheets.ts        # Google Sheets data fetch + sync to Supabase
 │   ├── format.ts               # Number/currency formatting
+│   ├── store-intelligence.ts   # Store health metrics (AOV, frequency, trend, health score)
 │   └── telegram.ts             # Telegram bot notifications
 └── middleware.ts                # Auth middleware (role-based: admin vs sales_rep)
 ```
 
 ## Database Tables (Supabase)
-- `stores` — id, code, name, aliases, created_at, address
+- `stores` — id, code, name, aliases, created_at, address, contact_name, contact_phone
 - `sales_records` — daily sales per store (units by product, revenue, collection, TSO count, etc.)
 - `invoices` — invoice tracking (invoice_no, contact_name, amount, remaining_amount, status, due_date, firm)
 - `users` — auth users with roles (admin, sales_rep)
@@ -68,6 +72,8 @@ src/
 - **Sales records**: Originally from Google Sheets, synced to Supabase; DB columns use snake_case
 - **Auth**: Cookie-based (`kk-auth`), middleware redirects unauthenticated users to `/login`
 - **AI Chat**: Uses AI SDK v6 `useChat()` hook on client, `streamText()` + `convertToModelMessages()` on server. Tools query Supabase directly.
+- **Store Intelligence**: Computed client-side from invoices in `src/lib/store-intelligence.ts`. Metrics: days since last order, order frequency, AOV, revenue trend (3-month MoM), payment reliability (paid/total %), outstanding ratio (remaining/total %), health score (weighted composite 0-100). Used on `/stores` (table + grid views) and `/stores/[storeCode]` detail page.
+- **Map iterations**: TypeScript target doesn't support `for...of` on Maps. Use `map.forEach()` or `Array.from(map.entries())` instead.
 
 ## Environment Variables
 - `SUPABASE_URL`, `SUPABASE_SECRET_KEY`

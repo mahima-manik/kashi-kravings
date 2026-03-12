@@ -81,8 +81,9 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editTier, setEditTier] = useState<StoreTier>('no_promoter');
-  const [editAliases, setEditAliases] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editContactName, setEditContactName] = useState('');
+  const [editContactPhone, setEditContactPhone] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
@@ -151,8 +152,9 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   function startEditing() {
     setEditName(storeEntry?.name ?? storeName);
     setEditTier(storeEntry?.tier ?? 'no_promoter');
-    setEditAliases((storeEntry?.aliases ?? []).join(', '));
     setEditAddress(storeEntry?.address ?? '');
+    setEditContactName(storeEntry?.contact_name ?? '');
+    setEditContactPhone(storeEntry?.contact_phone ?? '');
     setIsEditing(true);
   }
 
@@ -160,12 +162,19 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     if (!storeCode) return;
     setIsSaving(true);
     try {
-      const aliases = editAliases.split(',').map(a => a.trim()).filter(Boolean);
       const address = editAddress.trim() || null;
+      const contact_name = editContactName.trim() || null;
+      const rawPhone = editContactPhone.replace(/\D/g, '');
+      if (rawPhone && rawPhone.length !== 10) {
+        setError('Phone number must be 10 digits');
+        setIsSaving(false);
+        return;
+      }
+      const contact_phone = rawPhone || null;
       const res = await fetch('/api/stores', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: storeCode, name: editName, tier: editTier, aliases, address }),
+        body: JSON.stringify({ code: storeCode, name: editName, tier: editTier, address, contact_name, contact_phone }),
       });
       const result: ApiResponse<Store> = await res.json();
       if (result.success && result.data) {
@@ -262,16 +271,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Aliases (comma-separated)</label>
-              <input
-                type="text"
-                value={editAliases}
-                onChange={e => setEditAliases(e.target.value)}
-                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
-                placeholder="e.g. Alt Name 1, Alt Name 2"
-              />
-            </div>
-            <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Address</label>
               <input
                 type="text"
@@ -279,6 +278,27 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
                 onChange={e => setEditAddress(e.target.value)}
                 className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
                 placeholder="e.g. Dashashwamedh Ghat, Varanasi"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Contact Name</label>
+              <input
+                type="text"
+                value={editContactName}
+                onChange={e => setEditContactName(e.target.value)}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                placeholder="e.g. Rajesh Kumar"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Contact Phone (10 digits)</label>
+              <input
+                type="tel"
+                value={editContactPhone}
+                onChange={e => setEditContactPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                placeholder="e.g. 9876543210"
+                maxLength={10}
               />
             </div>
             <div className="flex gap-2">
@@ -329,6 +349,17 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
               {storeEntry?.address && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {storeEntry.address}
+                </p>
+              )}
+              {(storeEntry?.contact_name || storeEntry?.contact_phone) && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {storeEntry.contact_name && <span>{storeEntry.contact_name}</span>}
+                  {storeEntry.contact_name && storeEntry.contact_phone && <span> &middot; </span>}
+                  {storeEntry.contact_phone && (
+                    <a href={`tel:${storeEntry.contact_phone}`} className="hover:text-brand-gold transition-colors">
+                      {storeEntry.contact_phone}
+                    </a>
+                  )}
                 </p>
               )}
             </div>

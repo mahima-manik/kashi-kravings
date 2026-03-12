@@ -10,7 +10,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<Store[]>>> {
   try {
     const { data, error } = await supabase
       .from('stores')
-      .select('code, name, aliases, tier, address')
+      .select('code, name, aliases, tier, address, contact_name, contact_phone')
       .order('name');
 
     if (error) throw error;
@@ -21,6 +21,8 @@ export async function GET(): Promise<NextResponse<ApiResponse<Store[]>>> {
       aliases: row.aliases ?? [],
       tier: row.tier as StoreTier,
       address: row.address ?? null,
+      contact_name: row.contact_name ?? null,
+      contact_phone: row.contact_phone ?? null,
     }));
 
     return NextResponse.json({ success: true, data: stores });
@@ -35,7 +37,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<Store[]>>> {
 export async function PATCH(request: NextRequest): Promise<NextResponse<ApiResponse<Store>>> {
   try {
     const body = await request.json();
-    const { code, name, tier, aliases, address } = body;
+    const { code, name, tier, aliases, address, contact_name, contact_phone } = body;
 
     if (!code) {
       return NextResponse.json({ success: false, error: 'Store code is required' }, { status: 400 });
@@ -50,6 +52,8 @@ export async function PATCH(request: NextRequest): Promise<NextResponse<ApiRespo
     if (tier !== undefined) updates.tier = tier;
     if (aliases !== undefined) updates.aliases = aliases;
     if (address !== undefined) updates.address = address;
+    if (contact_name !== undefined) updates.contact_name = contact_name;
+    if (contact_phone !== undefined) updates.contact_phone = contact_phone;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ success: false, error: 'No fields to update' }, { status: 400 });
@@ -59,7 +63,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse<ApiRespo
       .from('stores')
       .update(updates)
       .eq('code', code)
-      .select('code, name, aliases, tier, address')
+      .select('code, name, aliases, tier, address, contact_name, contact_phone')
       .single();
 
     if (error) throw error;
@@ -72,6 +76,8 @@ export async function PATCH(request: NextRequest): Promise<NextResponse<ApiRespo
         aliases: data.aliases ?? [],
         tier: data.tier as StoreTier,
         address: data.address ?? null,
+        contact_name: data.contact_name ?? null,
+        contact_phone: data.contact_phone ?? null,
       },
     });
   } catch (error) {

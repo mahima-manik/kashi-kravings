@@ -14,6 +14,8 @@ export interface Store {
   aliases?: string[];
   tier: StoreTier;
   address?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
 }
 
 /**
