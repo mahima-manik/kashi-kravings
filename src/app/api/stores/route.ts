@@ -37,7 +37,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<Store[]>>> {
 export async function PATCH(request: NextRequest): Promise<NextResponse<ApiResponse<Store>>> {
   try {
     const body = await request.json();
-    const { code, name, tier, aliases, address, contact_name, contact_phone } = body;
+    const { code, name, tier, aliases, address, contact_name, contact_phone, password } = body;
 
     if (!code) {
       return NextResponse.json({ success: false, error: 'Store code is required' }, { status: 400 });
@@ -54,6 +54,12 @@ export async function PATCH(request: NextRequest): Promise<NextResponse<ApiRespo
     if (address !== undefined) updates.address = address;
     if (contact_name !== undefined) updates.contact_name = contact_name;
     if (contact_phone !== undefined) updates.contact_phone = contact_phone;
+
+    // Hash and store password if provided (admin setting store owner password)
+    if (password !== undefined && password !== '') {
+      const { hashPassword } = await import('@/lib/auth');
+      updates.password_hash = await hashPassword(password);
+    }
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ success: false, error: 'No fields to update' }, { status: 400 });

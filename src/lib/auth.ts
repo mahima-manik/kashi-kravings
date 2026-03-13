@@ -2,9 +2,10 @@
 // bcrypt is imported dynamically in password functions to avoid Edge Runtime issues in middleware
 
 export interface SessionPayload {
-  role: 'admin' | 'sales_rep';
+  role: 'admin' | 'sales_rep' | 'store_owner';
   email: string;
   userId: string;
+  storeCode?: string;
   exp: number;
 }
 

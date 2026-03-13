@@ -6,7 +6,13 @@
       "Bash(python3:*)",
       "Bash(node:*)",
       "Bash(npx vercel:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:www.justdial.com)",
+      "WebFetch(domain:magicpin.in)",
+      "Bash(npx tsx:*)",
+      "WebFetch(domain:mybillbook.in)",
+      "Bash(ls:*)",
+      "Bash(grep:*)"
     ]
   }
 }

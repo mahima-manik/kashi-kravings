@@ -12,7 +12,7 @@ const tabs = [
   { id: 'stores', label: 'Stores', href: '/stores', icon: Store },
 ];
 
-export default function Header() {
+export default function Header({ role }: { role?: string | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
@@ -21,6 +21,7 @@ export default function Header() {
   useEffect(() => setMounted(true), []);
 
   const activeTab = pathname === '/invoices' ? 'invoices' : pathname?.startsWith('/stores') ? 'stores' : 'sales';
+  const isStoreOwner = role === 'store_owner';
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
@@ -39,21 +40,23 @@ export default function Header() {
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
             />
             <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
-            <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
-              {tabs.map((tab) => (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === tab.id
-                      ? 'text-brand-gold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </Link>
-              ))}
-            </nav>
+            {!isStoreOwner && (
+              <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
+                {tabs.map((tab) => (
+                  <Link
+                    key={tab.id}
+                    href={tab.href}
+                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      activeTab === tab.id
+                        ? 'text-brand-gold'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -76,22 +79,24 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile tabs */}
-        <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
-          {tabs.map((tab) => (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                activeTab === tab.id
-                  ? 'text-brand-gold bg-brand-gold/10'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Mobile tabs — hidden for store owners */}
+        {!isStoreOwner && (
+          <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
+            {tabs.map((tab) => (
+              <Link
+                key={tab.id}
+                href={tab.href}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-brand-gold bg-brand-gold/10'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </div>
     </header>
   );

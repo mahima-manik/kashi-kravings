@@ -34,6 +34,8 @@ async function seedStores() {
     aliases: store.aliases,
     tier: store.tier,
     address: null,
+    contact_name: null,
+    contact_phone: null,
   }));
 
   const { error } = await supabase

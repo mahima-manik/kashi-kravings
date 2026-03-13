@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, Pencil, Trash2, X, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, Pencil, Trash2, X, Check, KeyRound } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData, DailySales } from '@/lib/types';
 import type { Store, StoreTier } from '@/lib/stores';
 import { STORE_TIERS } from '@/lib/stores';
@@ -56,6 +56,11 @@ function aggregateDailySales(records: SalesRecord[]): DailySales[] {
 
 function findStoreCodeLocal(contactName: string, stores: Store[]): string | null {
   const lower = contactName.toLowerCase();
+  // Match by store code directly (e.g. URL is /stores/KK-TRM-01)
+  for (const store of stores) {
+    if (store.code.toLowerCase() === lower) return store.code;
+  }
+  // Match by store name or alias (e.g. URL is /stores/The%20Ram%20Bhandar)
   for (const store of stores) {
     if (lower.startsWith(store.name.toLowerCase())) return store.code;
     for (const alias of store.aliases ?? []) {
@@ -77,6 +82,11 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Role detection
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const isStoreOwner = userRole === 'store_owner';
+  const isAdmin = userRole === 'admin';
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -84,8 +94,17 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [editAddress, setEditAddress] = useState('');
   const [editContactName, setEditContactName] = useState('');
   const [editContactPhone, setEditContactPhone] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  // Password change state (store owners)
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwChanging, setPwChanging] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const storeCode = useMemo(() => findStoreCodeLocal(storeName, storeList), [storeName, storeList]);
   const storeEntry = useMemo(() => storeList.find(s => s.code === storeCode), [storeList, storeCode]);
@@ -97,6 +116,11 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
       .then((result: ApiResponse<Store[]>) => {
         if (result.success && result.data) setStoreList(result.data);
       })
+      .catch(() => {});
+
+    fetch('/api/me')
+      .then(res => res.json())
+      .then((data: { role: string | null }) => { setUserRole(data.role); })
       .catch(() => {});
   }, []);
 
@@ -115,7 +139,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         const res = await fetch('/api/invoices', { signal });
         const result: ApiResponse<InvoiceData> = await res.json();
         if (!signal.aborted && result.success && result.data) {
-          setInvoices(result.data.invoices.filter(inv => inv.contactName === storeName));
+          setInvoices(result.data.invoices.filter(inv => inv.contactName === canonicalName));
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -155,6 +179,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     setEditAddress(storeEntry?.address ?? '');
     setEditContactName(storeEntry?.contact_name ?? '');
     setEditContactPhone(storeEntry?.contact_phone ?? '');
+    setEditPassword('');
     setIsEditing(true);
   }
 
@@ -174,7 +199,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
       const res = await fetch('/api/stores', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: storeCode, name: editName, tier: editTier, address, contact_name, contact_phone }),
+        body: JSON.stringify({ code: storeCode, name: editName, tier: editTier, address, contact_name, contact_phone, ...(editPassword ? { password: editPassword } : {}) }),
       });
       const result: ApiResponse<Store> = await res.json();
       if (result.success && result.data) {
@@ -226,8 +251,8 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const storeIntel = useMemo(() => {
     if (invoices.length === 0) return null;
     const intel = computeStoreIntelligence(invoices);
-    return intel.get(storeName) ?? null;
-  }, [invoices, storeName]);
+    return intel.get(canonicalName) ?? null;
+  }, [invoices, canonicalName]);
 
   const totalSalesValue = salesRecords.reduce((s, r) => s + r.saleValue, 0);
   const totalTSOs = salesRecords.reduce((s, r) => s + r.numTSO, 0);
@@ -243,9 +268,11 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
     <>
       {/* Back + header */}
       <div className="mb-6">
-        <Link href="/stores" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-gold transition-colors mb-3">
-          <ArrowLeft className="h-4 w-4" /> All Stores
-        </Link>
+        {!isStoreOwner && (
+          <Link href="/stores" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-gold transition-colors mb-3">
+            <ArrowLeft className="h-4 w-4" /> All Stores
+          </Link>
+        )}
 
         {isEditing ? (
           <div className="bg-surface-card border border-surface-border rounded-xl p-4 space-y-4">
@@ -301,6 +328,19 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
                 maxLength={10}
               />
             </div>
+            {isAdmin && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Set Store Login Password</label>
+                <input
+                  type="text"
+                  value={editPassword}
+                  onChange={e => setEditPassword(e.target.value)}
+                  className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                  placeholder="Leave blank to keep unchanged"
+                />
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Store owner will use their phone number + this password to log in.</p>
+              </div>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={saveEdits}
@@ -364,7 +404,16 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              {storeCode && (
+              {isStoreOwner && (
+                <button
+                  onClick={() => { setShowPasswordChange(!showPasswordChange); setPwMessage(null); }}
+                  className="p-2 rounded-lg text-gray-400 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors"
+                  title="Change password"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </button>
+              )}
+              {!isStoreOwner && storeCode && (
                 <>
                   <button
                     onClick={startEditing}
@@ -386,6 +435,86 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           </div>
         )}
       </div>
+
+      {/* Password change form (store owners) */}
+      {showPasswordChange && (
+        <div className="mb-4 bg-surface-card border border-surface-border rounded-xl p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Change Password</h3>
+          {pwMessage && (
+            <div className={`text-sm px-3 py-2 rounded-lg ${pwMessage.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+              {pwMessage.text}
+            </div>
+          )}
+          <input
+            type="password"
+            value={currentPw}
+            onChange={e => setCurrentPw(e.target.value)}
+            placeholder="Current password"
+            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+          />
+          <input
+            type="password"
+            value={newPw}
+            onChange={e => setNewPw(e.target.value)}
+            placeholder="New password"
+            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+          />
+          <input
+            type="password"
+            value={confirmPw}
+            onChange={e => setConfirmPw(e.target.value)}
+            placeholder="Confirm new password"
+            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={pwChanging || !currentPw || !newPw || !confirmPw}
+              onClick={async () => {
+                if (newPw !== confirmPw) {
+                  setPwMessage({ type: 'error', text: 'Passwords do not match' });
+                  return;
+                }
+                if (newPw.length < 4) {
+                  setPwMessage({ type: 'error', text: 'Password must be at least 4 characters' });
+                  return;
+                }
+                setPwChanging(true);
+                setPwMessage(null);
+                try {
+                  const res = await fetch('/api/store-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    setPwMessage({ type: 'success', text: 'Password changed successfully' });
+                    setCurrentPw('');
+                    setNewPw('');
+                    setConfirmPw('');
+                  } else {
+                    setPwMessage({ type: 'error', text: data.error || 'Failed to change password' });
+                  }
+                } catch {
+                  setPwMessage({ type: 'error', text: 'Failed to change password' });
+                } finally {
+                  setPwChanging(false);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-brand-gold text-white hover:bg-brand-gold/90 disabled:opacity-50"
+            >
+              {pwChanging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Update Password
+            </button>
+            <button
+              onClick={() => { setShowPasswordChange(false); setPwMessage(null); setCurrentPw(''); setNewPw(''); setConfirmPw(''); }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-surface-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <X className="h-3.5 w-3.5" /> Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       {deleteConfirm && (
