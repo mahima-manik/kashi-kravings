@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, IndianRupee, ArrowRight } from 'lucide-react';
 import type { ApiResponse, Invoice, InvoiceData } from '@/lib/types';
 import { formatCurrency } from '@/lib/format';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
@@ -127,6 +127,34 @@ export default function StoreHomePage() {
           </p>
         </div>
       </div>
+
+      {/* Clear Dues Banner */}
+      {(() => {
+        const outstanding = invoices.reduce((s, inv) => s + inv.remainingAmount, 0);
+        if (outstanding <= 0) return null;
+        return (
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/20 border border-red-200/60 dark:border-red-800/30 px-5 py-3.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+                <IndianRupee className="h-4 w-4 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(outstanding)} <span className="font-normal text-gray-500 dark:text-gray-400">outstanding</span>
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Clear dues to improve your reliability score</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {/* UI-only placeholder */}}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
+            >
+              Clear Dues
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Quick Stats */}
       {storeIntel && (
