@@ -6,7 +6,7 @@ import { DEALS } from '@/lib/products';
 import { useCartSafe } from '@/contexts/CartContext';
 import DealCard from './DealCard';
 
-const FEATURED_IDS = ['starter-pack', 'best-seller'];
+const FEATURED_IDS = ['starter-pack', 'growth-pack'];
 
 export default function FeaturedDeals() {
   const cart = useCartSafe();

@@ -3,7 +3,7 @@
 import { ShoppingCart, Sparkles, Minus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import type { DealPack } from '@/lib/products';
-import { discountPct } from '@/lib/products';
+import { discountPct, PRODUCTS_MAP } from '@/lib/products';
 import { formatCurrency } from '@/lib/format';
 import { useCartSafe } from '@/contexts/CartContext';
 
@@ -13,11 +13,6 @@ interface DealCardProps {
   onAdd: (dealId: string) => void;
 }
 
-const FLAVOR_LABELS: Record<string, string> = {
-  thandai: 'Thandai',
-  paan: 'Paan',
-  gilori: 'Gilori',
-};
 
 export default function DealCard({ deal, featured, onAdd }: DealCardProps) {
   const cart = useCartSafe();
@@ -67,15 +62,18 @@ export default function DealCard({ deal, featured, onAdd }: DealCardProps) {
 
         {/* Breakdown */}
         {!featured && (
-          <div className="mb-4 flex gap-2">
-            {deal.items.map((item) => (
-              <span
-                key={item.flavor}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-brand-olive/10 dark:bg-brand-gold/10 text-brand-olive dark:text-brand-gold"
-              >
-                {FLAVOR_LABELS[item.flavor]} x{item.qty}
-              </span>
-            ))}
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {deal.items.map((item) => {
+              const product = PRODUCTS_MAP.get(item.productId);
+              return (
+                <span
+                  key={item.productId}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-brand-olive/10 dark:bg-brand-gold/10 text-brand-olive dark:text-brand-gold"
+                >
+                  {product?.shortName ?? item.productId} x{item.qty}
+                </span>
+              );
+            })}
           </div>
         )}
 
