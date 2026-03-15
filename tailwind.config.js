@@ -10,7 +10,7 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          olive: '#8B7D3C',
+          olive: '#917941',
           gold: '#A69A5B',
           cream: '#F5E6C8',
           ivory: '#FAF3E6',

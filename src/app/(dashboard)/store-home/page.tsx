@@ -122,7 +122,7 @@ export default function StoreHomePage() {
             <p className="text-sm font-medium text-brand-olive dark:text-brand-gold mt-0.5">{storeName}</p>
           )}
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-            Welcome to your Kashi Kravings dashboard
+            Welcome to your Kashi Kravings dashboard 🎉
           </p>
         </div>
       </div>
