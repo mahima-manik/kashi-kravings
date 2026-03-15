@@ -1,10 +1,11 @@
 'use client';
 
-import { LogOut, Sun, Moon, Store, UserCircle } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, UserCircle, Menu, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const tabs = [
   { id: 'sales', label: 'Promotions', href: '/' },
@@ -17,8 +18,24 @@ export default function Header({ role, storeCode }: { role?: string | null; stor
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleClick = () => setProfileOpen(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [profileOpen]);
 
   const activeTab = pathname === '/invoices' ? 'invoices' : pathname?.startsWith('/stores') ? 'stores' : 'sales';
   const isStoreOwner = role === 'store_owner';
@@ -29,128 +46,118 @@ export default function Header({ role, storeCode }: { role?: string | null; stor
     router.refresh();
   };
 
+  const linkClass = (active: boolean) =>
+    `text-sm font-medium transition-colors ${
+      active
+        ? 'text-brand-olive dark:text-brand-gold'
+        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+    }`;
+
+  const mobileLinkClass = (active: boolean) =>
+    `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+      active
+        ? 'text-brand-olive dark:text-brand-gold bg-brand-olive/5 dark:bg-brand-gold/10'
+        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+    }`;
+
+  const navLinks = isStoreOwner && storeCode
+    ? [
+        { href: '/store-home', label: 'Home', active: pathname === '/store-home' },
+        { href: `/stores/${storeCode}`, label: 'My Invoices', active: pathname?.startsWith('/stores') ?? false },
+      ]
+    : !isStoreOwner
+      ? tabs.map((tab) => ({ href: tab.href, label: tab.label, active: activeTab === tab.id }))
+      : [];
+
   return (
     <header className="bg-surface-card border-b border-surface-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-3">
-          <div className="flex items-center gap-3">
-            <img
-              src="/logo.jpeg"
-              alt="Kashi Kravings"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
-            />
-            <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
-            {isStoreOwner && storeCode ? (
-              <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
-                <Link
-                  href="/store-home"
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    pathname === '/store-home'
-                      ? 'text-brand-gold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  Home
+        <div className="flex items-center justify-between py-3">
+          {/* Left: Hamburger on mobile, nav links on desktop */}
+          <div className="flex items-center flex-1">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+            <nav className="hidden sm:flex items-center gap-6">
+              {navLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={linkClass(link.active)}>
+                  {link.label}
                 </Link>
-                <Link
-                  href={`/stores/${storeCode}`}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    pathname?.startsWith('/stores')
-                      ? 'text-brand-gold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  My Invoices
-                </Link>
-              </nav>
-            ) : !isStoreOwner && (
-              <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
-                {tabs.map((tab) => (
-                  <Link
-                    key={tab.id}
-                    href={tab.href}
-                    className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                      activeTab === tab.id
-                        ? 'text-brand-gold'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
+              ))}
+            </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Center: Logo */}
+          <div className="flex-shrink-0">
+            <Link href={isStoreOwner ? '/store-home' : '/'}>
+              <Image
+                src="/kashi-kravings-logo.jpeg"
+                alt="Kashi Kravings"
+                width={100}
+                height={100}
+                className="h-10 sm:h-12 w-auto object-contain"
+              />
+            </Link>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center justify-end gap-2 sm:gap-3 flex-1">
             {mounted && (
               <button
                 onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                className="inline-flex items-center p-2 bg-surface-card-hover border border-surface-border-light text-sm rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                 aria-label="Toggle theme"
               >
-                {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
             )}
-            <Link
-              href="/profile"
-              className="inline-flex items-center p-2 bg-surface-card-hover border border-surface-border-light text-sm rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-              aria-label="Profile"
-            >
-              <UserCircle className="h-4 w-4" />
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-chocolate-700 hover:bg-chocolate-600 text-sm font-medium rounded-lg text-white transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline ml-2">Logout</span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setProfileOpen(!profileOpen); }}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                aria-label="Profile menu"
+              >
+                <UserCircle className="h-5 w-5" />
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 mt-1 w-40 bg-surface-card border border-surface-border rounded-lg shadow-lg py-1 z-50">
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <UserCircle className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors w-full"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Mobile tabs */}
-        {isStoreOwner && storeCode ? (
-          <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
-            <Link
-              href="/store-home"
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                pathname === '/store-home'
-                  ? 'text-brand-gold bg-brand-gold/10'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              href={`/stores/${storeCode}`}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                pathname?.startsWith('/stores')
-                  ? 'text-brand-gold bg-brand-gold/10'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              My Invoices
-            </Link>
-          </nav>
-        ) : !isStoreOwner && (
-          <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.id}
-                href={tab.href}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === tab.id
-                    ? 'text-brand-gold bg-brand-gold/10'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                {tab.label}
+      {/* Mobile slide-down menu */}
+      {mobileMenuOpen && (
+        <div className="sm:hidden border-t border-surface-border bg-surface-card">
+          <nav className="px-4 py-3 space-y-1">
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href} className={mobileLinkClass(link.active)}>
+                {link.label}
               </Link>
             ))}
           </nav>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 }
