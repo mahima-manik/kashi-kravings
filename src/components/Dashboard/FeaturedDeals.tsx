@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { DEALS } from '@/lib/products';
-import { useCart } from '@/contexts/CartContext';
+import { useCartSafe } from '@/contexts/CartContext';
 import DealCard from './DealCard';
 
 const FEATURED_IDS = ['starter-pack', 'best-seller'];
 
 export default function FeaturedDeals() {
-  const { addItem } = useCart();
+  const cart = useCartSafe();
+  const addItem = cart?.addItem ?? (() => {});
   const featured = DEALS.filter((d) => FEATURED_IDS.includes(d.id));
 
   return (

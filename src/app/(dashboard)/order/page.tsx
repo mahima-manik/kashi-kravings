@@ -2,14 +2,17 @@
 
 import { ShoppingCart } from 'lucide-react';
 import { PRODUCTS, DEALS } from '@/lib/products';
-import { useCart } from '@/contexts/CartContext';
+import { useCartSafe } from '@/contexts/CartContext';
 import DealCard from '@/components/Dashboard/DealCard';
 import CartDrawer from '@/components/Dashboard/CartDrawer';
 
 const UNIQUE_FLAVORS = PRODUCTS.filter((p) => p.size === '45g');
 
 export default function OrderPage() {
-  const { addItem, totalItems, setCartOpen } = useCart();
+  const cart = useCartSafe();
+  const addItem = cart?.addItem ?? (() => {});
+  const totalItems = cart?.totalItems ?? 0;
+  const setCartOpen = cart?.setCartOpen ?? (() => {});
 
   return (
     <>

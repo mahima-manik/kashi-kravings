@@ -2,11 +2,16 @@
 
 import { X, Minus, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
-import { useCart } from '@/contexts/CartContext';
+import { useCartSafe } from '@/contexts/CartContext';
 import { DEALS } from '@/lib/products';
 import { formatCurrency } from '@/lib/format';
 
 export default function CartDrawer() {
+  const cart = useCartSafe();
+  const [orderPlaced, setOrderPlaced] = useState(false);
+
+  if (!cart || !cart.isCartOpen) return null;
+
   const {
     items,
     paymentMode,
@@ -20,11 +25,7 @@ export default function CartDrawer() {
     subtotal,
     mrpTotal,
     savings,
-  } = useCart();
-
-  const [orderPlaced, setOrderPlaced] = useState(false);
-
-  if (!isCartOpen) return null;
+  } = cart;
 
   const handlePlaceOrder = () => {
     setOrderPlaced(true);

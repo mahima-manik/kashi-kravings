@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { DealPack } from '@/lib/products';
 import { discountPct } from '@/lib/products';
 import { formatCurrency } from '@/lib/format';
-import { useCart } from '@/contexts/CartContext';
+import { useCartSafe } from '@/contexts/CartContext';
 
 interface DealCardProps {
   deal: DealPack;
@@ -20,9 +20,9 @@ const FLAVOR_LABELS: Record<string, string> = {
 };
 
 export default function DealCard({ deal, featured, onAdd }: DealCardProps) {
-  const { items, updateQuantity } = useCart();
-  const cartItem = items.find((i) => i.dealId === deal.id);
-  const qty = cartItem?.quantity ?? 0;
+  const cart = useCartSafe();
+  const qty = cart?.items.find((i) => i.dealId === deal.id)?.quantity ?? 0;
+  const updateQuantity = cart?.updateQuantity ?? (() => {});
   const discount = discountPct(deal.mrpTotal, deal.dealPrice);
   const payNowDiscount = discountPct(deal.mrpTotal, deal.payNowPrice);
 
