@@ -7,7 +7,8 @@ import { formatCurrency } from '@/lib/format';
 import { getUnpaidInvoices, computeAgingBuckets } from '@/lib/aging';
 import { computeStoreIntelligence } from '@/lib/store-intelligence';
 import { computeMilestones } from '@/lib/milestones';
-import { MetricCard, AgingDistribution, MilestoneSection } from '@/components/Dashboard';
+import { MetricCard, AgingDistribution, MilestoneSection, FeaturedDeals } from '@/components/Dashboard';
+import CartDrawer from '@/components/Dashboard/CartDrawer';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -151,6 +152,9 @@ export default function StoreHomePage() {
         </div>
       )}
 
+      {/* Quick Restock Deals */}
+      <FeaturedDeals />
+
       {/* Milestones */}
       <MilestoneSection milestones={milestones} />
 
@@ -159,6 +163,8 @@ export default function StoreHomePage() {
         <AgingDistribution buckets={agingData.buckets} />
       )}
 
+      {/* Cart Drawer */}
+      <CartDrawer />
     </div>
   );
 }

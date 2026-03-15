@@ -1,11 +1,12 @@
 'use client';
 
-import { LogOut, Sun, Moon, Store, UserCircle, Menu, X } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, UserCircle, Menu, X, ShoppingCart } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useCartSafe } from '@/contexts/CartContext';
 
 const tabs = [
   { id: 'sales', label: 'Promotions', href: '/' },
@@ -60,9 +61,12 @@ export default function Header({ role, storeCode }: { role?: string | null; stor
         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
     }`;
 
+  const cart = useCartSafe();
+
   const navLinks = isStoreOwner && storeCode
     ? [
         { href: '/store-home', label: 'Home', active: pathname === '/store-home' },
+        { href: '/order', label: 'Order', active: pathname === '/order' },
         { href: `/stores/${storeCode}`, label: 'My Invoices', active: pathname?.startsWith('/stores') ?? false },
       ]
     : !isStoreOwner
@@ -106,6 +110,20 @@ export default function Header({ role, storeCode }: { role?: string | null; stor
 
           {/* Right: Actions */}
           <div className="flex items-center justify-end gap-2 sm:gap-3 flex-1">
+            {isStoreOwner && cart && (
+              <button
+                onClick={() => cart.setCartOpen(true)}
+                className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {cart.totalItems > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-brand-gold text-white text-[10px] font-bold rounded-full w-4.5 h-4.5 min-w-[18px] min-h-[18px] flex items-center justify-center leading-none">
+                    {cart.totalItems}
+                  </span>
+                )}
+              </button>
+            )}
             {mounted && (
               <button
                 onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}

@@ -18,3 +18,6 @@ export { default as StoreAnalytics } from './StoreAnalytics';
 export { default as MilestoneSection } from './MilestoneSection';
 export { default as AchievementBadge } from './AchievementBadge';
 export { default as RecentInvoices } from './RecentInvoices';
+export { default as DealCard } from './DealCard';
+export { default as FeaturedDeals } from './FeaturedDeals';
+export { default as CartDrawer } from './CartDrawer';

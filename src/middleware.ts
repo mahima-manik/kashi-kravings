@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   if (role) {
     // Store owners can only access their own store page or profile
     if (role === 'store_owner' && storeCode) {
-      const allowed = [`/stores/${storeCode}`, '/profile', '/store-home'];
+      const allowed = [`/stores/${storeCode}`, '/profile', '/store-home', '/order'];
       if (!allowed.includes(pathname)) {
         return NextResponse.redirect(new URL('/store-home', request.url));
       }
