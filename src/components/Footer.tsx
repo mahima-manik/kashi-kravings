@@ -1,3 +1,5 @@
+import { Instagram, Facebook } from 'lucide-react';
+
 export default function Footer() {
   return (
     <footer className="bg-brand-olive text-white/90">
@@ -31,6 +33,33 @@ export default function Footer() {
                 </a>
               </li>
             </ul>
+          </div>
+
+          {/* Follow Us */}
+          <div>
+            <h3 className="text-lg font-semibold text-white italic">
+              Follow Us
+            </h3>
+            <div className="mt-3 flex items-center gap-4">
+              <a
+                href="https://www.instagram.com/kashikravings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 hover:text-white transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.facebook.com/profile.php?id=61571858091328"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/70 hover:text-white transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
