@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Sun, Moon, Store } from 'lucide-react';
+import { LogOut, Sun, Moon, Store, UserCircle } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
@@ -12,7 +12,7 @@ const tabs = [
   { id: 'stores', label: 'Stores', href: '/stores', icon: Store },
 ];
 
-export default function Header({ role }: { role?: string | null }) {
+export default function Header({ role, storeCode }: { role?: string | null; storeCode?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
@@ -40,7 +40,30 @@ export default function Header({ role }: { role?: string | null }) {
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover"
             />
             <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Kashi Kravings</h1>
-            {!isStoreOwner && (
+            {isStoreOwner && storeCode ? (
+              <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
+                <Link
+                  href="/store-home"
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    pathname === '/store-home'
+                      ? 'text-brand-gold'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Home
+                </Link>
+                <Link
+                  href={`/stores/${storeCode}`}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    pathname?.startsWith('/stores')
+                      ? 'text-brand-gold'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  My Invoices
+                </Link>
+              </nav>
+            ) : !isStoreOwner && (
               <nav className="hidden sm:flex items-center gap-1 ml-4 border-l border-surface-border pl-4">
                 {tabs.map((tab) => (
                   <Link
@@ -69,6 +92,13 @@ export default function Header({ role }: { role?: string | null }) {
                 {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
             )}
+            <Link
+              href="/profile"
+              className="inline-flex items-center p-2 bg-surface-card-hover border border-surface-border-light text-sm rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              aria-label="Profile"
+            >
+              <UserCircle className="h-4 w-4" />
+            </Link>
             <button
               onClick={handleLogout}
               className="inline-flex items-center p-2 sm:px-3 sm:py-2 bg-chocolate-700 hover:bg-chocolate-600 text-sm font-medium rounded-lg text-white transition-colors"
@@ -79,8 +109,31 @@ export default function Header({ role }: { role?: string | null }) {
           </div>
         </div>
 
-        {/* Mobile tabs — hidden for store owners */}
-        {!isStoreOwner && (
+        {/* Mobile tabs */}
+        {isStoreOwner && storeCode ? (
+          <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
+            <Link
+              href="/store-home"
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                pathname === '/store-home'
+                  ? 'text-brand-gold bg-brand-gold/10'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              href={`/stores/${storeCode}`}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                pathname?.startsWith('/stores')
+                  ? 'text-brand-gold bg-brand-gold/10'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              My Invoices
+            </Link>
+          </nav>
+        ) : !isStoreOwner && (
           <nav className="sm:hidden flex items-center gap-1 pb-3 -mt-1">
             {tabs.map((tab) => (
               <Link

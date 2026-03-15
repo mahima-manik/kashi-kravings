@@ -13,6 +13,7 @@ type SortField = 'date' | 'amount' | 'remaining';
 interface InvoiceTableProps {
   invoices: Invoice[];
   showSearch?: boolean;
+  hideFirmFilter?: boolean;
 }
 
 function parseDate(d: string) {
@@ -24,6 +25,7 @@ function parseDate(d: string) {
 export default function InvoiceTable({
   invoices,
   showSearch = false,
+  hideFirmFilter = false,
 }: InvoiceTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -107,21 +109,23 @@ export default function InvoiceTable({
                   </button>
                 ))}
               </div>
-              <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
-                {(['all' as const, ...FIRM_KEYS]).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => setFirmFilter(key)}
-                    className={`px-3 py-2 transition-colors ${
-                      firmFilter === key
-                        ? 'bg-brand-gold/20 text-brand-gold font-medium'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
-                    }`}
-                  >
-                    {key === 'all' ? 'All' : FIRMS[key]}
-                  </button>
-                ))}
-              </div>
+              {!hideFirmFilter && (
+                <div className="flex items-center rounded-lg border border-surface-border-light overflow-hidden text-sm">
+                  {(['all' as const, ...FIRM_KEYS]).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => setFirmFilter(key)}
+                      className={`px-3 py-2 transition-colors ${
+                        firmFilter === key
+                          ? 'bg-brand-gold/20 text-brand-gold font-medium'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-surface-card-hover'
+                      }`}
+                    >
+                      {key === 'all' ? 'All' : FIRMS[key]}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

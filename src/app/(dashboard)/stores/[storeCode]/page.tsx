@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, Pencil, Trash2, X, Check, KeyRound } from 'lucide-react';
+import { Loader2, ArrowLeft, Pencil, Trash2, X, Check } from 'lucide-react';
 import { ApiResponse, Invoice, InvoiceData, SalesRecord, DashboardData, DailySales } from '@/lib/types';
 import type { Store, StoreTier } from '@/lib/stores';
 import { STORE_TIERS } from '@/lib/stores';
@@ -98,13 +98,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  // Password change state (store owners)
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
-  const [pwChanging, setPwChanging] = useState(false);
-  const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const storeCode = useMemo(() => findStoreCodeLocal(storeName, storeList), [storeName, storeList]);
   const storeEntry = useMemo(() => storeList.find(s => s.code === storeCode), [storeList, storeCode]);
@@ -404,15 +397,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              {isStoreOwner && (
-                <button
-                  onClick={() => { setShowPasswordChange(!showPasswordChange); setPwMessage(null); }}
-                  className="p-2 rounded-lg text-gray-400 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors"
-                  title="Change password"
-                >
-                  <KeyRound className="h-4 w-4" />
-                </button>
-              )}
               {!isStoreOwner && storeCode && (
                 <>
                   <button
@@ -435,86 +419,6 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
           </div>
         )}
       </div>
-
-      {/* Password change form (store owners) */}
-      {showPasswordChange && (
-        <div className="mb-4 bg-surface-card border border-surface-border rounded-xl p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Change Password</h3>
-          {pwMessage && (
-            <div className={`text-sm px-3 py-2 rounded-lg ${pwMessage.type === 'success' ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
-              {pwMessage.text}
-            </div>
-          )}
-          <input
-            type="password"
-            value={currentPw}
-            onChange={e => setCurrentPw(e.target.value)}
-            placeholder="Current password"
-            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
-          />
-          <input
-            type="password"
-            value={newPw}
-            onChange={e => setNewPw(e.target.value)}
-            placeholder="New password"
-            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
-          />
-          <input
-            type="password"
-            value={confirmPw}
-            onChange={e => setConfirmPw(e.target.value)}
-            placeholder="Confirm new password"
-            className="w-full text-sm bg-white dark:bg-gray-900 border border-surface-border rounded-lg px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
-          />
-          <div className="flex gap-2">
-            <button
-              disabled={pwChanging || !currentPw || !newPw || !confirmPw}
-              onClick={async () => {
-                if (newPw !== confirmPw) {
-                  setPwMessage({ type: 'error', text: 'Passwords do not match' });
-                  return;
-                }
-                if (newPw.length < 4) {
-                  setPwMessage({ type: 'error', text: 'Password must be at least 4 characters' });
-                  return;
-                }
-                setPwChanging(true);
-                setPwMessage(null);
-                try {
-                  const res = await fetch('/api/store-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
-                  });
-                  const data = await res.json();
-                  if (data.success) {
-                    setPwMessage({ type: 'success', text: 'Password changed successfully' });
-                    setCurrentPw('');
-                    setNewPw('');
-                    setConfirmPw('');
-                  } else {
-                    setPwMessage({ type: 'error', text: data.error || 'Failed to change password' });
-                  }
-                } catch {
-                  setPwMessage({ type: 'error', text: 'Failed to change password' });
-                } finally {
-                  setPwChanging(false);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-brand-gold text-white hover:bg-brand-gold/90 disabled:opacity-50"
-            >
-              {pwChanging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Update Password
-            </button>
-            <button
-              onClick={() => { setShowPasswordChange(false); setPwMessage(null); setCurrentPw(''); setNewPw(''); setConfirmPw(''); }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-surface-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <X className="h-3.5 w-3.5" /> Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Delete confirmation dialog */}
       {deleteConfirm && (
@@ -580,12 +484,22 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
             value={`${Math.round(storeIntel.paidPct)}%`}
             warn={storeIntel.paidPct < 50}
           />
-          <MetricCard
-            label="Health Score"
-            value={`${storeIntel.healthScore}/100`}
-            warn={storeIntel.healthScore < 40}
-            subtitle={storeIntel.healthScore >= 70 ? 'Healthy' : storeIntel.healthScore >= 40 ? 'Moderate' : 'At Risk'}
-          />
+          {!isStoreOwner && (
+            <MetricCard
+              label="Health Score"
+              value={`${storeIntel.healthScore}/100`}
+              warn={storeIntel.healthScore < 40}
+              subtitle={storeIntel.healthScore >= 70 ? 'Healthy' : storeIntel.healthScore >= 40 ? 'Moderate' : 'At Risk'}
+            />
+          )}
+        </div>
+      )}
+
+      {/* TSO & Samples cards for store owners at company_promoter tier */}
+      {isStoreOwner && storeEntry?.tier === 'company_promoter' && salesRecords.length > 0 && (
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <MetricCard label="TSOs Deployed" value={totalTSOs.toString()} />
+          <MetricCard label="Samples Distributed" value={totalSamplesGiven.toString()} />
         </div>
       )}
 
@@ -608,17 +522,19 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
         >
           Invoices{invoices.length > 0 && ` (${invoices.length})`}
         </button>
-        <button
-          onClick={() => setActiveTab('sales')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-            activeTab === 'sales'
-              ? 'border-brand-gold text-brand-gold'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
-        >
-          Daily Sales{dailySales.length > 0 && ` (${dailySales.length})`}
-        </button>
-        {storeEntry?.tier === 'company_promoter' && (
+        {!isStoreOwner && (
+          <button
+            onClick={() => setActiveTab('sales')}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              activeTab === 'sales'
+                ? 'border-brand-gold text-brand-gold'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            Daily Sales{dailySales.length > 0 && ` (${dailySales.length})`}
+          </button>
+        )}
+        {!isStoreOwner && storeEntry?.tier === 'company_promoter' && (
           <button
             onClick={() => setActiveTab('analytics')}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
@@ -669,7 +585,7 @@ export default function StoreDetailPage({ params }: { params: { storeCode: strin
                 <Loader2 className="h-8 w-8 animate-spin text-brand-gold" />
               </div>
             ) : invoices.length > 0 ? (
-              <InvoiceTable invoices={invoices} />
+              <InvoiceTable invoices={invoices} hideFirmFilter={isStoreOwner} />
             ) : (
               <div className="text-center py-12 text-gray-500 dark:text-gray-400 text-sm">
                 No invoices found for this store.

@@ -15,3 +15,5 @@ export { default as AgingReport } from './AgingReport';
 export { default as AgingDistribution } from './AgingDistribution';
 export { default as MetricCard } from './MetricCard';
 export { default as StoreAnalytics } from './StoreAnalytics';
+export { default as MilestoneSection } from './MilestoneSection';
+export { default as RecentInvoices } from './RecentInvoices';

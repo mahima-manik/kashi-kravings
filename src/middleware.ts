@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   // Authenticated user on login page → redirect based on role
   if (role && isLoginPage) {
     if (role === 'store_owner' && storeCode) {
-      return NextResponse.redirect(new URL(`/stores/${storeCode}`, request.url));
+      return NextResponse.redirect(new URL('/store-home', request.url));
     }
     const dest = role === 'sales_rep' ? '/sales-entry' : '/';
     return NextResponse.redirect(new URL(dest, request.url));
@@ -36,16 +36,16 @@ export async function middleware(request: NextRequest) {
 
   // Authenticated
   if (role) {
-    // Store owners can only access their own store page
+    // Store owners can only access their own store page or profile
     if (role === 'store_owner' && storeCode) {
-      const allowedPath = `/stores/${storeCode}`;
-      if (pathname !== allowedPath) {
-        return NextResponse.redirect(new URL(allowedPath, request.url));
+      const allowed = [`/stores/${storeCode}`, '/profile', '/store-home'];
+      if (!allowed.includes(pathname)) {
+        return NextResponse.redirect(new URL('/store-home', request.url));
       }
       return NextResponse.next();
     }
-    // Sales reps can only access /sales-entry
-    if (role === 'sales_rep' && !isSalesEntry) {
+    // Sales reps can only access /sales-entry or profile
+    if (role === 'sales_rep' && !isSalesEntry && pathname !== '/profile') {
       return NextResponse.redirect(new URL('/sales-entry', request.url));
     }
     // Admins can access everything

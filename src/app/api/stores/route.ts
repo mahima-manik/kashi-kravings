@@ -36,11 +36,73 @@ export async function GET(): Promise<NextResponse<ApiResponse<Store[]>>> {
 
 export async function PATCH(request: NextRequest): Promise<NextResponse<ApiResponse<Store>>> {
   try {
+    // Auth check
+    const { cookies } = await import('next/headers');
+    const { verifySessionCookie } = await import('@/lib/auth');
+    const cookieStore = await cookies();
+    const authCookie = cookieStore.get('kk-auth');
+    if (!authCookie?.value) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+    const session = await verifySessionCookie(authCookie.value);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { code, name, tier, aliases, address, contact_name, contact_phone, password } = body;
 
     if (!code) {
       return NextResponse.json({ success: false, error: 'Store code is required' }, { status: 400 });
+    }
+
+    // Store owners can only update their own store, limited fields
+    if (session.role === 'store_owner') {
+      if (code !== session.storeCode) {
+        return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+      }
+      const allowedFields = ['contact_name', 'contact_phone', 'address'];
+      const updates: Record<string, unknown> = {};
+      if (contact_name !== undefined) updates.contact_name = contact_name;
+      if (contact_phone !== undefined) updates.contact_phone = contact_phone;
+      if (address !== undefined) updates.address = address;
+
+      // Check for disallowed fields
+      const disallowed = Object.keys(body).filter(k => k !== 'code' && !allowedFields.includes(k));
+      if (disallowed.length > 0) {
+        return NextResponse.json({ success: false, error: `Store owners cannot update: ${disallowed.join(', ')}` }, { status: 403 });
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return NextResponse.json({ success: false, error: 'No fields to update' }, { status: 400 });
+      }
+
+      const { data, error } = await supabase
+        .from('stores')
+        .update(updates)
+        .eq('code', code)
+        .select('code, name, aliases, tier, address, contact_name, contact_phone')
+        .single();
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          code: data.code,
+          name: data.name,
+          aliases: data.aliases ?? [],
+          tier: data.tier as StoreTier,
+          address: data.address ?? null,
+          contact_name: data.contact_name ?? null,
+          contact_phone: data.contact_phone ?? null,
+        },
+      });
+    }
+
+    // Only admins can proceed beyond this point
+    if (session.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     if (tier && !(tier in STORE_TIERS)) {
