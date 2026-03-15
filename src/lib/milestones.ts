@@ -3,7 +3,7 @@ import { parseDate } from '@/lib/aging';
 
 export interface Milestone {
   id: string;
-  category: 'revenue' | 'payment' | 'orders' | 'outstanding' | 'consistency';
+  category: 'revenue' | 'orders' | 'outstanding' | 'consistency';
   label: string;
   target: number;
   progress: number; // 0-100
@@ -20,13 +20,11 @@ const DAY_MS = 1000 * 60 * 60 * 24;
 
 export function computeMilestones(invoices: Invoice[]): MilestoneResult {
   if (invoices.length === 0) {
-    const all = buildAllMilestones(0, 0, 0, 0, null);
+    const all = buildAllMilestones(0, 0, 0, null);
     return { achieved: [], nextUp: all[0] ?? null, all };
   }
 
   const totalAmount = invoices.reduce((s, inv) => s + inv.amount, 0);
-  const paidCount = invoices.filter(inv => inv.invoiceStatus === 'Paid').length;
-  const paidPct = (paidCount / invoices.length) * 100;
   const totalRemaining = invoices.reduce((s, inv) => s + inv.remainingAmount, 0);
   const orderCount = invoices.length;
 
@@ -46,7 +44,7 @@ export function computeMilestones(invoices: Invoice[]): MilestoneResult {
     avgFrequencyDays = Math.round(totalGap / DAY_MS / (sorted.length - 1));
   }
 
-  const all = buildAllMilestones(totalAmount, paidPct, orderCount, totalRemaining, avgFrequencyDays);
+  const all = buildAllMilestones(totalAmount, orderCount, totalRemaining, avgFrequencyDays);
   const achieved = all.filter(m => m.achieved);
   const pending = all.filter(m => !m.achieved);
   // Pick the one closest to completion
@@ -58,7 +56,6 @@ export function computeMilestones(invoices: Invoice[]): MilestoneResult {
 
 function buildAllMilestones(
   totalAmount: number,
-  paidPct: number,
   orderCount: number,
   totalRemaining: number,
   avgFrequencyDays: number | null,
@@ -81,24 +78,6 @@ function buildAllMilestones(
       target: t.amount,
       progress: Math.min(100, (totalAmount / t.amount) * 100),
       achieved: totalAmount >= t.amount,
-    });
-  }
-
-  // Payment reliability milestones
-  const paymentTargets = [
-    { pct: 50, label: '50% Payment Reliability' },
-    { pct: 75, label: '75% Payment Reliability' },
-    { pct: 90, label: '90% Payment Reliability' },
-    { pct: 100, label: '100% Payment Reliability' },
-  ];
-  for (const t of paymentTargets) {
-    milestones.push({
-      id: `payment-${t.pct}`,
-      category: 'payment',
-      label: t.label,
-      target: t.pct,
-      progress: orderCount > 0 ? Math.min(100, (paidPct / t.pct) * 100) : 0,
-      achieved: orderCount > 0 && paidPct >= t.pct,
     });
   }
 

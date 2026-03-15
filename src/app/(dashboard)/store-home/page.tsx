@@ -16,14 +16,10 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
-const TREND_LABELS: Record<string, string> = {
-  up: '↑ Growing',
-  flat: '→ Stable',
-  down: '↓ Declining',
-};
-
 export default function StoreHomePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [storeCode, setStoreCode] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>(null);
   const [contactName, setContactName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +44,8 @@ export default function StoreHomePage() {
           setIsLoading(false);
           return;
         }
+        setStoreCode(meData.storeCode);
+        setStoreName(meData.storeName ?? null);
         setContactName(meData.contactName ?? meData.storeName ?? null);
 
         const invResult: ApiResponse<InvoiceData> = await invRes.json();
@@ -104,25 +102,37 @@ export default function StoreHomePage() {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-brand-olive/10 to-brand-gold/10 dark:from-brand-olive/20 dark:to-brand-gold/20 rounded-xl p-6 border border-brand-gold/20">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          {getGreeting()}{contactName ? `, ${contactName}` : ''}!
-        </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Welcome to your Kashi Kravings dashboard
-        </p>
+      <div className="bg-gradient-to-r from-brand-olive/10 to-brand-gold/10 dark:from-brand-olive/20 dark:to-brand-gold/20 rounded-xl p-6 border border-brand-gold/20 flex items-center gap-5">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-brand-olive/20 to-brand-gold/20 dark:from-brand-olive/30 dark:to-brand-gold/30 flex items-center justify-center overflow-hidden flex-shrink-0 relative border-2 border-brand-gold/30">
+          <span className="text-xl sm:text-2xl font-bold text-brand-olive/60 dark:text-brand-gold/60">
+            {(storeName ?? '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          </span>
+          <img
+            src={`/stores/${storeCode}.jpg`}
+            alt={storeName ?? ''}
+            className="absolute inset-0 w-full h-full object-cover rounded-full"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {getGreeting()}{contactName ? `, ${contactName}` : ''}!
+          </h2>
+          {storeName && (
+            <p className="text-sm font-medium text-brand-olive dark:text-brand-gold mt-0.5">{storeName}</p>
+          )}
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+            Welcome to your Kashi Kravings dashboard
+          </p>
+        </div>
       </div>
 
       {/* Quick Stats */}
       {storeIntel && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard
             label="Avg Order Value"
             value={formatCurrency(storeIntel.aov)}
-          />
-          <MetricCard
-            label="Revenue Trend"
-            value={storeIntel.trend ? TREND_LABELS[storeIntel.trend] : '—'}
           />
           <MetricCard
             label="Payment Reliability"
