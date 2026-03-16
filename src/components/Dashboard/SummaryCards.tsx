@@ -15,17 +15,41 @@ export default function SummaryCards({ records }: SummaryCardsProps) {
   const totalSampleConsumed = records.reduce((sum, r) => sum + r.sampleConsumed, 0);
   const salesPerTSO = totalTSOs > 0 ? totalRevenue / totalTSOs : 0;
 
+  // Best Day computation
+  const byDate = records.reduce((acc, r) => {
+    acc[r.date] = (acc[r.date] || 0) + r.saleValue;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const bestEntry = Object.entries(byDate).sort((a, b) => b[1] - a[1])[0];
+  const bestDayValue = bestEntry ? bestEntry[1] : 0;
+  const bestDayDate = bestEntry ? bestEntry[0] : null;
+  const bestDayRecordCount = bestDayDate ? records.filter(r => r.date === bestDayDate).length : 0;
+  const bestDayAvg = bestDayRecordCount > 0 ? bestDayValue / bestDayRecordCount : 0;
+  const bestDayLabel = bestDayDate
+    ? new Date(bestDayDate + 'T00:00:00').toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '—';
+
   const cards = [
     { label: 'Total Sales Value', value: formatCurrency(totalRevenue) },
     { label: 'Total TSOs Deployed', value: totalTSOs.toLocaleString('en-IN') },
     { label: 'Samples Given / Consumed', value: `${totalSampleGiven.toLocaleString('en-IN')} / ${totalSampleConsumed.toLocaleString('en-IN')}` },
     { label: 'Sales per TSO', value: formatCurrency(salesPerTSO) },
+    {
+      label: 'Best Day',
+      value: bestDayDate ? formatCurrency(bestDayValue) : '—',
+      subtitle: bestDayDate ? `${bestDayLabel} · Avg ${formatCurrency(bestDayAvg)} / entry` : undefined,
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
       {cards.map((card) => (
-        <MetricCard key={card.label} label={card.label} value={card.value} />
+        <MetricCard key={card.label} label={card.label} value={card.value} subtitle={card.subtitle} />
       ))}
     </div>
   );
