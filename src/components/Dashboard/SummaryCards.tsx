@@ -15,24 +15,21 @@ export default function SummaryCards({ records }: SummaryCardsProps) {
   const totalSampleConsumed = records.reduce((sum, r) => sum + r.sampleConsumed, 0);
   const salesPerTSO = totalTSOs > 0 ? totalRevenue / totalTSOs : 0;
 
-  // Best Day computation
-  const byDate = records.reduce((acc, r) => {
-    acc[r.date] = (acc[r.date] || 0) + r.saleValue;
+  // Best Day of Week computation
+  const byWeekday = records.reduce((acc, r) => {
+    const dow = new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long' });
+    if (!acc[dow]) acc[dow] = { total: 0, count: 0 };
+    acc[dow].total += r.saleValue;
+    acc[dow].count += 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { total: number; count: number }>);
 
-  const bestEntry = Object.entries(byDate).sort((a, b) => b[1] - a[1])[0];
-  const bestDayValue = bestEntry ? bestEntry[1] : 0;
-  const bestDayDate = bestEntry ? bestEntry[0] : null;
-  const bestDayRecordCount = bestDayDate ? records.filter(r => r.date === bestDayDate).length : 0;
-  const bestDayAvg = bestDayRecordCount > 0 ? bestDayValue / bestDayRecordCount : 0;
-  const bestDayLabel = bestDayDate
-    ? new Date(bestDayDate + 'T00:00:00').toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      })
-    : '—';
+  const bestWeekdayEntry = Object.entries(byWeekday).sort((a, b) => b[1].total - a[1].total)[0];
+  const bestDayName = bestWeekdayEntry ? bestWeekdayEntry[0] : null;
+  const bestDayValue = bestWeekdayEntry ? bestWeekdayEntry[1].total : 0;
+  const bestDayAvg = bestWeekdayEntry && bestWeekdayEntry[1].count > 0
+    ? bestWeekdayEntry[1].total / bestWeekdayEntry[1].count
+    : 0;
 
   const cards = [
     { label: 'Total Sales Value', value: formatCurrency(totalRevenue) },
@@ -41,8 +38,8 @@ export default function SummaryCards({ records }: SummaryCardsProps) {
     { label: 'Sales per TSO', value: formatCurrency(salesPerTSO) },
     {
       label: 'Best Day',
-      value: bestDayDate ? formatCurrency(bestDayValue) : '—',
-      subtitle: bestDayDate ? `${bestDayLabel} · Avg ${formatCurrency(bestDayAvg)} / entry` : undefined,
+      value: bestDayName ?? '—',
+      subtitle: bestDayName ? `Avg ${formatCurrency(bestDayAvg)} net` : undefined,
     },
   ];
 
